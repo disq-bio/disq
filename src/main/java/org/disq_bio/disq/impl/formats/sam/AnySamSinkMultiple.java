@@ -68,7 +68,8 @@ public class AnySamSinkMultiple extends AbstractSamSink implements Serializable 
       JavaRDD<SAMRecord> reads,
       String path,
       String referenceSourcePath,
-      String tempPartsDirectory)
+      String tempPartsDirectory,
+      long sbiIndexGranularity)
       throws IOException {
 
     FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();

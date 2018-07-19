@@ -27,6 +27,7 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.util.Locatable;
 import java.io.IOException;
@@ -46,6 +47,7 @@ public class HtsjdkReadsRddStorage {
   private ValidationStringency validationStringency = ValidationStringency.DEFAULT_STRINGENCY;
   private boolean useNio;
   private String referenceSourcePath;
+  private long sbiIndexGranularity = SBIIndexWriter.DEFAULT_GRANULARITY;
 
   /**
    * Create a {@link HtsjdkReadsRddStorage} from a Spark context object.
@@ -94,6 +96,16 @@ public class HtsjdkReadsRddStorage {
    */
   public HtsjdkReadsRddStorage referenceSourcePath(String referenceSourcePath) {
     this.referenceSourcePath = referenceSourcePath;
+    return this;
+  }
+
+  /**
+   * @param sbiIndexGranularity the granularity to use when writing SBI index files; only used when
+   *     writing single BAM files.
+   * @return the current {@link HtsjdkReadsRddStorage}
+   */
+  public HtsjdkReadsRddStorage sbiIndexGranularity(long sbiIndexGranularity) {
+    this.sbiIndexGranularity = sbiIndexGranularity;
     return this;
   }
 
@@ -209,6 +221,7 @@ public class HtsjdkReadsRddStorage {
             htsjdkReadsRdd.getReads(),
             path,
             referenceSourcePath,
-            tempPartsDirectory);
+            tempPartsDirectory,
+            sbiIndexGranularity);
   }
 }

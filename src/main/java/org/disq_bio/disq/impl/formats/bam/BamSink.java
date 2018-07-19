@@ -28,6 +28,7 @@ package org.disq_bio.disq.impl.formats.bam;
 import htsjdk.samtools.BAMFileWriter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,6 +40,7 @@ import org.disq_bio.disq.HtsjdkReadsRdd;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.Merger;
+import org.disq_bio.disq.impl.file.SBIMerger;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import scala.Tuple2;
 
@@ -60,14 +62,18 @@ public class BamSink extends AbstractSamSink {
       JavaRDD<SAMRecord> reads,
       String path,
       String referenceSourcePath,
-      String tempPartsDirectory)
+      String tempPartsDirectory,
+      long sbiIndexGranularity)
       throws IOException {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
+    boolean writeSbiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
     reads
         .mapPartitions(
             readIterator -> {
               HeaderlessBamOutputFormat.setHeader(headerBroadcast.getValue());
+              HeaderlessBamOutputFormat.setWriteSbiFile(writeSbiFile);
+              HeaderlessBamOutputFormat.setSbiIndexGranularity(sbiIndexGranularity);
               return readIterator;
             })
         .mapToPair(
@@ -83,6 +89,7 @@ public class BamSink extends AbstractSamSink {
     try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
       BAMFileWriter.writeHeader(out, header);
     }
+    long headerLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), headerFile);
 
     String terminatorFile = tempPartsDirectory + "/terminator";
     try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), terminatorFile)) {
@@ -90,6 +97,16 @@ public class BamSink extends AbstractSamSink {
     }
 
     new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
+    long fileLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), path);
+    if (writeSbiFile) {
+      new SBIMerger(fileSystemWrapper)
+          .mergeParts(
+              jsc.hadoopConfiguration(),
+              tempPartsDirectory,
+              path + SBIIndex.FILE_EXTENSION,
+              headerLength,
+              fileLength);
+    }
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
   }
 }

@@ -28,6 +28,8 @@ package org.disq_bio.disq.impl.formats.bam;
 import htsjdk.samtools.BAMRecordCodec;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SBIIndex;
+import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.BinaryCodec;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import java.io.File;
@@ -51,41 +53,82 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
 
   static class BamRecordWriter extends RecordWriter<Void, SAMRecord> {
 
+    private final Configuration conf;
+    private final Path file;
     private final OutputStream out;
+    private final BlockCompressedOutputStream compressedOut;
     private final BinaryCodec binaryCodec;
     private final BAMRecordCodec bamRecordCodec;
+    private final SBIIndexWriter sbiIndexWriter;
 
-    public BamRecordWriter(Configuration conf, Path file, SAMFileHeader header) throws IOException {
+    public BamRecordWriter(
+        Configuration conf, Path file, SAMFileHeader header, Path sbiFile, long sbiIndexGranularity)
+        throws IOException {
+      this.conf = conf;
+      this.file = file;
       this.out = file.getFileSystem(conf).create(file);
-      BlockCompressedOutputStream compressedOut = new BlockCompressedOutputStream(out, (File) null);
-      binaryCodec = new BinaryCodec(compressedOut);
-      bamRecordCodec = new BAMRecordCodec(header);
+      this.compressedOut = new BlockCompressedOutputStream(out, (File) null);
+      this.binaryCodec = new BinaryCodec(compressedOut);
+      this.bamRecordCodec = new BAMRecordCodec(header);
       bamRecordCodec.setOutputStream(compressedOut);
+      if (sbiFile != null) {
+        this.sbiIndexWriter =
+            new SBIIndexWriter(sbiFile.getFileSystem(conf).create(sbiFile), sbiIndexGranularity);
+      } else {
+        this.sbiIndexWriter = null;
+      }
     }
 
     @Override
     public void write(Void ignore, SAMRecord samRecord) {
+      if (sbiIndexWriter != null) {
+        sbiIndexWriter.processRecord(compressedOut.getFilePointer());
+      }
       bamRecordCodec.encode(samRecord);
     }
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException {
       binaryCodec.getOutputStream().flush();
-      out.close(); // don't close BlockCompressedOutputStream since we don't want to write the
+      // don't close BlockCompressedOutputStream since we don't want to write the
       // terminator
+      out.close();
+      long finalVirtualOffset = compressedOut.getFilePointer();
+      long dataFileLength = file.getFileSystem(conf).getFileStatus(file).getLen();
+      if (sbiIndexWriter != null) {
+        sbiIndexWriter.finish(finalVirtualOffset, dataFileLength);
+      }
     }
   }
 
   private static SAMFileHeader header;
+  private static boolean writeSbiFile;
+  private static long sbiIndexGranularity;
 
   public static void setHeader(SAMFileHeader samFileHeader) {
     header = samFileHeader;
+  }
+
+  public static void setWriteSbiFile(boolean writeSbiFile) {
+    HeaderlessBamOutputFormat.writeSbiFile = writeSbiFile;
+  }
+
+  public static void setSbiIndexGranularity(long sbiIndexGranularity) {
+    HeaderlessBamOutputFormat.sbiIndexGranularity = sbiIndexGranularity;
   }
 
   @Override
   public RecordWriter<Void, SAMRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
       throws IOException {
     Path file = getDefaultWorkFile(taskAttemptContext, "");
-    return new BamRecordWriter(taskAttemptContext.getConfiguration(), file, header);
+    Path sbiFile;
+    if (writeSbiFile) {
+      // ensure sbi files are hidden so they don't interfere with merging of part files
+      sbiFile = new Path(file.getParent(), "." + file.getName() + SBIIndex.FILE_EXTENSION);
+    } else {
+      sbiFile = null;
+    }
+    return new BamRecordWriter(
+        taskAttemptContext.getConfiguration(), file, header, sbiFile, sbiIndexGranularity);
   }
 }
