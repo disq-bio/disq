@@ -11,21 +11,41 @@ import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.bam.BamSink;
-import org.disq_bio.disq.impl.formats.bam.BamSource;
 import org.disq_bio.disq.impl.formats.cram.CramSink;
-import org.disq_bio.disq.impl.formats.cram.CramSource;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSource;
 import org.disq_bio.disq.impl.formats.sam.AnySamSinkMultiple;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.disq_bio.disq.impl.formats.sam.SamSink;
-import org.disq_bio.disq.impl.formats.sam.SamSource;
 
 /** The entry point for reading or writing a {@link HtsjdkReadsRdd}. */
 public class HtsjdkReadsRddStorage {
 
   /** An option for configuring how to write a {@link HtsjdkReadsRdd}. */
-  public interface WriteOption {}
+  public interface WriteOption {
+    static AbstractSamSink getSink(
+        FormatWriteOption formatWriteOption,
+        FileCardinalityWriteOption fileCardinalityWriteOption) {
+      switch (fileCardinalityWriteOption) {
+        case SINGLE:
+          switch (formatWriteOption) {
+            case BAM:
+              return new BamSink();
+            case CRAM:
+              return new CramSink();
+            case SAM:
+              return new SamSink();
+            default:
+              throw new IllegalArgumentException("Unrecognized format: " + formatWriteOption);
+          }
+        case MULTIPLE:
+          return new AnySamSinkMultiple(SamFormat.fromFormatWriteOption(formatWriteOption));
+        default:
+          throw new IllegalArgumentException(
+              "Unrecognized cardinality: " + fileCardinalityWriteOption);
+      }
+    }
+  }
 
   /** An option for configuring which format to write a {@link HtsjdkReadsRdd} as. */
   public enum FormatWriteOption implements WriteOption {
@@ -35,6 +55,11 @@ public class HtsjdkReadsRddStorage {
     CRAM,
     /** SAM format */
     SAM;
+
+    static FormatWriteOption fromPath(String path) {
+      SamFormat samFormat = SamFormat.fromPath(path);
+      return samFormat == null ? null : samFormat.toFormatWriteOption();
+    }
   }
 
   /** An option for configuring the number of files to write a {@link HtsjdkReadsRdd} as. */
@@ -42,7 +67,11 @@ public class HtsjdkReadsRddStorage {
     /** Write a single file specified by the path. */
     SINGLE,
     /** Write multiple files in a directory specified by the path. */
-    MULTIPLE
+    MULTIPLE;
+
+    static FileCardinalityWriteOption fromPath(String path) {
+      return SamFormat.fromPath(path) == null ? MULTIPLE : SINGLE;
+    }
   }
 
   /**
@@ -159,20 +188,7 @@ public class HtsjdkReadsRddStorage {
       throw new IllegalArgumentException("Cannot find format extension for " + path);
     }
 
-    AbstractSamSource abstractSamSource;
-    switch (samFormat) {
-      case BAM:
-        abstractSamSource = new BamSource(useNio);
-        break;
-      case CRAM:
-        abstractSamSource = new CramSource(useNio);
-        break;
-      case SAM:
-        abstractSamSource = new SamSource();
-        break;
-      default:
-        throw new IllegalArgumentException("File does not end in BAM, CRAM, or SAM extension.");
-    }
+    AbstractSamSource abstractSamSource = samFormat.createAbstractSamSource(fileSystemWrapper);
 
     SAMFileHeader header =
         abstractSamSource.getFileHeader(
@@ -215,7 +231,7 @@ public class HtsjdkReadsRddStorage {
     }
 
     if (formatWriteOption == null) {
-      formatWriteOption = inferFormatFromPath(path);
+      formatWriteOption = FormatWriteOption.fromPath(path);
     }
 
     if (formatWriteOption == null) {
@@ -224,7 +240,7 @@ public class HtsjdkReadsRddStorage {
     }
 
     if (fileCardinalityWriteOption == null) {
-      fileCardinalityWriteOption = inferCardinalityFromPath(path);
+      fileCardinalityWriteOption = FileCardinalityWriteOption.fromPath(path);
     }
 
     String tempPartsDirectory = null;
@@ -234,7 +250,7 @@ public class HtsjdkReadsRddStorage {
       tempPartsDirectory = path + ".parts";
     }
 
-    getSink(formatWriteOption, fileCardinalityWriteOption)
+    WriteOption.getSink(formatWriteOption, fileCardinalityWriteOption)
         .save(
             sparkContext,
             htsjdkReadsRdd.getHeader(),
@@ -242,39 +258,5 @@ public class HtsjdkReadsRddStorage {
             path,
             referenceSourcePath,
             tempPartsDirectory);
-  }
-
-  private FormatWriteOption inferFormatFromPath(String path) {
-    SamFormat samFormat = SamFormat.fromPath(path);
-    return samFormat == null ? null : samFormat.toFormatWriteOption();
-  }
-
-  private FileCardinalityWriteOption inferCardinalityFromPath(String path) {
-    SamFormat samFormat = SamFormat.fromPath(path);
-    return samFormat == null
-        ? FileCardinalityWriteOption.MULTIPLE
-        : FileCardinalityWriteOption.SINGLE;
-  }
-
-  private AbstractSamSink getSink(
-      FormatWriteOption formatWriteOption, FileCardinalityWriteOption fileCardinalityWriteOption) {
-    switch (fileCardinalityWriteOption) {
-      case SINGLE:
-        switch (formatWriteOption) {
-          case BAM:
-            return new BamSink();
-          case CRAM:
-            return new CramSink();
-          case SAM:
-            return new SamSink();
-          default:
-            throw new IllegalArgumentException("Unrecognized format: " + formatWriteOption);
-        }
-      case MULTIPLE:
-        return new AnySamSinkMultiple(SamFormat.fromFormatWriteOption(formatWriteOption));
-      default:
-        throw new IllegalArgumentException(
-            "Unrecognized cardinality: " + fileCardinalityWriteOption);
-    }
   }
 }

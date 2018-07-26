@@ -43,12 +43,14 @@ public class BamRecordGuesserChecker implements Serializable {
     FALSE_NEGATIVE
   }
 
-  private final boolean useNio;
   private final FileSystemWrapper fileSystemWrapper;
 
+  public BamRecordGuesserChecker(FileSystemWrapper fileSystemWrapper) {
+    this.fileSystemWrapper = fileSystemWrapper;
+  }
+
   public BamRecordGuesserChecker(boolean useNio) {
-    this.useNio = useNio;
-    this.fileSystemWrapper = useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper();
+    this(useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper());
   }
 
   SBIIndex getSBIIndex(Configuration conf, String bamFile) throws IOException {
@@ -91,7 +93,7 @@ public class BamRecordGuesserChecker implements Serializable {
 
     SerializableHadoopConfiguration confSer =
         new SerializableHadoopConfiguration(jsc.hadoopConfiguration());
-    return new BgzfBlockSource(useNio)
+    return new BgzfBlockSource(fileSystemWrapper)
         .getBgzfBlocks(jsc, path, splitSize)
         .mapPartitionsToPair(
             (PairFlatMapFunction<Iterator<BgzfBlockGuesser.BgzfBlock>, Long, RecordStartResult>)

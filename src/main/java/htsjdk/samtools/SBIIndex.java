@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+// TODO: remove this class once https://github.com/samtools/htsjdk/pull/1138 is released
+
 /**
  * SBI is an index into BGZF-compressed data files, which has an entry for the file position of the
  * start of every <i>n</i>th record. Reads files that were created by {@link BAMSBIIndexer}.

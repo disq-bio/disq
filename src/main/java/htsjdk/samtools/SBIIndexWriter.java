@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+// TODO: remove this class once https://github.com/samtools/htsjdk/pull/1138 is released
+
 /**
  * Writes SBI files as understood by {@link SBIIndex}.
  *

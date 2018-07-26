@@ -23,10 +23,15 @@ public class HtsjdkReadsRdd {
     this.reads = reads;
   }
 
+  /**
+   * @return the header for the reads in this RDD. In the case that different reads have different
+   *     headers, it is undefined which header this method returns.
+   */
   public SAMFileHeader getHeader() {
     return header;
   }
 
+  /** @return a RDD of {@link SAMRecord} with headers. */
   public JavaRDD<SAMRecord> getReads() {
     return reads;
   }

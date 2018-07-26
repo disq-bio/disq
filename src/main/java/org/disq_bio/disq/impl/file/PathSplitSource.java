@@ -16,25 +16,16 @@ import scala.Tuple2;
 
 public class PathSplitSource implements Serializable {
 
-  private final boolean useNio;
   private final FileSystemWrapper fileSystemWrapper;
 
-  public PathSplitSource() {
-    this(false);
-  }
-
-  /**
-   * @param useNio if true use the NIO filesystem APIs rather than the Hadoop filesystem APIs. This
-   *     is appropriate for cloud stores where file locality is not relied upon.
-   */
-  public PathSplitSource(boolean useNio) {
-    this.useNio = useNio;
-    this.fileSystemWrapper = useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper();
+  /** @param fileSystemWrapper the filesystem wrapper to use when constructing splits. */
+  public PathSplitSource(FileSystemWrapper fileSystemWrapper) {
+    this.fileSystemWrapper = fileSystemWrapper;
   }
 
   public JavaRDD<PathSplit> getPathSplits(JavaSparkContext jsc, String path, int splitSize)
       throws IOException {
-    if (useNio) {
+    if (fileSystemWrapper.usesNio()) {
       // Use Java NIO by creating splits with Spark parallelize. File locality is not maintained,
       // but this is not an issue if reading from a cloud store.
 

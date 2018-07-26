@@ -15,6 +15,8 @@ import org.apache.hadoop.conf.Configuration;
  */
 public interface FileSystemWrapper extends Serializable {
 
+  boolean usesNio();
+
   String normalize(Configuration conf, String path) throws IOException;
 
   SeekableStream open(Configuration conf, String path) throws IOException;

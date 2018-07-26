@@ -7,6 +7,8 @@ import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.spark.api.java.JavaRDD;
 import org.disq_bio.disq.BaseTest;
+import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +24,8 @@ public class BgzfBlockSourceTest extends BaseTest {
 
     // find all the blocks in each partition
     JavaRDD<BgzfBlockGuesser.BgzfBlock> bgzfBlocks =
-        new BgzfBlockSource(useNio).getBgzfBlocks(jsc, inputPath, splitSize);
+        new BgzfBlockSource(useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper())
+            .getBgzfBlocks(jsc, inputPath, splitSize);
     List<BgzfBlockGuesser.BgzfBlock> collect = bgzfBlocks.collect();
 
     Assert.assertEquals(26, collect.size());

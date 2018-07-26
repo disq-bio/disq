@@ -17,7 +17,21 @@ import org.disq_bio.disq.impl.formats.vcf.VcfSource;
 public class HtsjdkVariantsRddStorage {
 
   /** An option for configuring how to write a {@link HtsjdkVariantsRdd}. */
-  public interface WriteOption {}
+  public interface WriteOption {
+    static AbstractVcfSink getSink(
+        FormatWriteOption formatWriteOption,
+        FileCardinalityWriteOption fileCardinalityWriteOption) {
+      switch (fileCardinalityWriteOption) {
+        case SINGLE:
+          return new VcfSink();
+        case MULTIPLE:
+          return new VcfSinkMultiple(VcfFormat.fromFormatWriteOption(formatWriteOption));
+        default:
+          throw new IllegalArgumentException(
+              "Unrecognized cardinality: " + fileCardinalityWriteOption);
+      }
+    }
+  }
 
   /** An option for configuring which format to write a {@link HtsjdkVariantsRdd} as. */
   public enum FormatWriteOption implements WriteOption {
@@ -27,6 +41,11 @@ public class HtsjdkVariantsRddStorage {
     VCF_BGZ,
     /** block compressed VCF format (.vcf.gz) */
     VCF_GZ;
+
+    static FormatWriteOption fromPath(String path) {
+      VcfFormat vcfFormat = VcfFormat.fromPath(path);
+      return vcfFormat == null ? null : vcfFormat.toFormatWriteOption();
+    }
   }
 
   /** An option for configuring the number of files to write a {@link HtsjdkVariantsRdd} as. */
@@ -34,7 +53,11 @@ public class HtsjdkVariantsRddStorage {
     /** Write a single file specified by the path. */
     SINGLE,
     /** Write multiple files in a directory specified by the path. */
-    MULTIPLE
+    MULTIPLE;
+
+    static FileCardinalityWriteOption fromPath(String path) {
+      return VcfFormat.fromPath(path) == null ? MULTIPLE : SINGLE;
+    }
   }
 
   /**
@@ -136,7 +159,7 @@ public class HtsjdkVariantsRddStorage {
     }
 
     if (formatWriteOption == null) {
-      formatWriteOption = inferFormatFromPath(path);
+      formatWriteOption = FormatWriteOption.fromPath(path);
     }
 
     if (formatWriteOption == null) {
@@ -145,7 +168,7 @@ public class HtsjdkVariantsRddStorage {
     }
 
     if (fileCardinalityWriteOption == null) {
-      fileCardinalityWriteOption = inferCardinalityFromPath(path);
+      fileCardinalityWriteOption = FileCardinalityWriteOption.fromPath(path);
     }
 
     String tempPartsDirectory = null;
@@ -155,37 +178,12 @@ public class HtsjdkVariantsRddStorage {
       tempPartsDirectory = path + ".parts";
     }
 
-    getSink(formatWriteOption, fileCardinalityWriteOption)
+    WriteOption.getSink(formatWriteOption, fileCardinalityWriteOption)
         .save(
             sparkContext,
             htsjdkVariantsRdd.getHeader(),
             htsjdkVariantsRdd.getVariants(),
             path,
             tempPartsDirectory);
-  }
-
-  private FormatWriteOption inferFormatFromPath(String path) {
-    VcfFormat vcfFormat = VcfFormat.fromPath(path);
-    return vcfFormat == null ? null : vcfFormat.toFormatWriteOption();
-  }
-
-  private FileCardinalityWriteOption inferCardinalityFromPath(String path) {
-    VcfFormat vcfFormat = VcfFormat.fromPath(path);
-    return vcfFormat == null
-        ? FileCardinalityWriteOption.MULTIPLE
-        : FileCardinalityWriteOption.SINGLE;
-  }
-
-  private AbstractVcfSink getSink(
-      FormatWriteOption formatWriteOption, FileCardinalityWriteOption fileCardinalityWriteOption) {
-    switch (fileCardinalityWriteOption) {
-      case SINGLE:
-        return new VcfSink();
-      case MULTIPLE:
-        return new VcfSinkMultiple(VcfFormat.fromFormatWriteOption(formatWriteOption));
-      default:
-        throw new IllegalArgumentException(
-            "Unrecognized cardinality: " + fileCardinalityWriteOption);
-    }
   }
 }

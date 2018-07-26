@@ -31,8 +31,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
-import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
+import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.PathChunk;
 import org.disq_bio.disq.impl.file.PathSplit;
 import org.disq_bio.disq.impl.file.PathSplitSource;
@@ -44,9 +43,9 @@ public class CramSource extends AbstractBinarySamSource implements Serializable 
 
   private final PathSplitSource pathSplitSource;
 
-  public CramSource(boolean useNio) {
-    super(useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper());
-    this.pathSplitSource = new PathSplitSource(useNio);
+  public CramSource(FileSystemWrapper fileSystemWrapper) {
+    super(fileSystemWrapper);
+    this.pathSplitSource = new PathSplitSource(fileSystemWrapper);
   }
 
   @Override

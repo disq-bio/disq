@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+// TODO: remove this class once https://github.com/samtools/htsjdk/pull/1138 is released
+
 /** Class for reading and querying BAM files. */
 public class BAMFileReader2 extends SamReader.ReaderImplementation {
   // True if reading from a File rather than an InputStream

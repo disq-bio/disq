@@ -14,6 +14,8 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+// TODO: remove this class once https://github.com/samtools/htsjdk/pull/1138 is released
+
 /** Writes SBI files for BAM files, as understood by {@link SBIIndex}. */
 public final class BAMSBIIndexer {
 

@@ -23,6 +23,11 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
       false; // set to true and run tests to see if any streams are not being closed
 
   @Override
+  public boolean usesNio() {
+    return false;
+  }
+
+  @Override
   public String normalize(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
     FileSystem fileSystem = p.getFileSystem(conf);

@@ -24,8 +24,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.HtsjdkReadsRdd;
-import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
-import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
+import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.PathChunk;
 import org.disq_bio.disq.impl.file.PathSplitSource;
 import org.disq_bio.disq.impl.formats.SerializableHadoopConfiguration;
@@ -47,14 +46,10 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
   private final BgzfBlockSource bgzfBlockSource;
   private final PathSplitSource pathSplitSource;
 
-  /**
-   * @param useNio if true use the NIO filesystem APIs rather than the Hadoop filesystem APIs. This
-   *     is appropriate for cloud stores where file locality is not relied upon.
-   */
-  public BamSource(boolean useNio) {
-    super(useNio ? new NioFileSystemWrapper() : new HadoopFileSystemWrapper());
-    this.bgzfBlockSource = new BgzfBlockSource(useNio);
-    this.pathSplitSource = new PathSplitSource(useNio);
+  public BamSource(FileSystemWrapper fileSystemWrapper) {
+    super(fileSystemWrapper);
+    this.bgzfBlockSource = new BgzfBlockSource(fileSystemWrapper);
+    this.pathSplitSource = new PathSplitSource(fileSystemWrapper);
   }
 
   @Override

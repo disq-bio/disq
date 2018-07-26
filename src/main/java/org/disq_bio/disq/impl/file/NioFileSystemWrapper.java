@@ -22,6 +22,11 @@ public class NioFileSystemWrapper implements FileSystemWrapper {
   private static final int PREFETCHER_BUFFER_SIZE_MB = 4;
 
   @Override
+  public boolean usesNio() {
+    return true;
+  }
+
+  @Override
   public String normalize(Configuration conf, String path) {
     return asPath(path).toAbsolutePath().normalize().toString();
   }

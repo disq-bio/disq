@@ -23,10 +23,15 @@ public class HtsjdkVariantsRdd {
     this.variants = variants;
   }
 
+  /**
+   * @return the header for the variants in this RDD. In the case that different variants have
+   *     different headers, it is undefined which header this method returns.
+   */
   public VCFHeader getHeader() {
     return header;
   }
 
+  /** @return a RDD of {@link VariantContext} with headers. */
   public JavaRDD<VariantContext> getVariants() {
     return variants;
   }

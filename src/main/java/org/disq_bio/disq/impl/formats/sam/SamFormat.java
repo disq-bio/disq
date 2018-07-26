@@ -1,6 +1,9 @@
 package org.disq_bio.disq.impl.formats.sam;
 
 import org.disq_bio.disq.HtsjdkReadsRddStorage;
+import org.disq_bio.disq.impl.file.FileSystemWrapper;
+import org.disq_bio.disq.impl.formats.bam.BamSource;
+import org.disq_bio.disq.impl.formats.cram.CramSource;
 
 public enum SamFormat {
   BAM(".bam", ".bai"),
@@ -53,5 +56,18 @@ public enum SamFormat {
       }
     }
     return null;
+  }
+
+  public AbstractSamSource createAbstractSamSource(FileSystemWrapper fileSystemWrapper) {
+    switch (this) {
+      case BAM:
+        return new BamSource(fileSystemWrapper);
+      case CRAM:
+        return new CramSource(fileSystemWrapper);
+      case SAM:
+        return new SamSource();
+      default:
+        throw new IllegalArgumentException("File does not end in BAM, CRAM, or SAM extension.");
+    }
   }
 }
