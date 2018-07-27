@@ -1,21 +1,31 @@
 package org.disq_bio.disq.impl.formats.sam;
 
-import org.disq_bio.disq.HtsjdkReadsRddStorage;
+import static org.disq_bio.disq.FileCardinalityWriteOption.MULTIPLE;
+import static org.disq_bio.disq.FileCardinalityWriteOption.SINGLE;
+
+import java.util.function.Function;
+import org.disq_bio.disq.FileCardinalityWriteOption;
+import org.disq_bio.disq.ReadsFormatWriteOption;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.formats.bam.BamSource;
 import org.disq_bio.disq.impl.formats.cram.CramSource;
 
 public enum SamFormat {
-  BAM(".bam", ".bai"),
-  CRAM(".cram", ".crai"),
-  SAM(".sam", null);
+  BAM(".bam", ".bai", BamSource::new),
+  CRAM(".cram", ".crai", CramSource::new),
+  SAM(".sam", null, fileSystemWrapper -> new SamSource());
 
   private String extension;
   private String indexExtension;
+  private Function<FileSystemWrapper, AbstractSamSource> sourceProvider;
 
-  SamFormat(String extension, String indexExtension) {
+  SamFormat(
+      String extension,
+      String indexExtension,
+      Function<FileSystemWrapper, AbstractSamSource> sourceProvider) {
     this.extension = extension;
     this.indexExtension = indexExtension;
+    this.sourceProvider = sourceProvider;
   }
 
   public String getExtension() {
@@ -26,17 +36,19 @@ public enum SamFormat {
     return indexExtension;
   }
 
+  public AbstractSamSource createAbstractSamSource(FileSystemWrapper fileSystemWrapper) {
+    return sourceProvider.apply(fileSystemWrapper);
+  }
+
   public boolean fileMatches(String path) {
     return path.endsWith(extension);
   }
 
-  public HtsjdkReadsRddStorage.FormatWriteOption toFormatWriteOption() {
-    return HtsjdkReadsRddStorage.FormatWriteOption.valueOf(
-        name()); // one-to-one correspondence between names
+  public ReadsFormatWriteOption toFormatWriteOption() {
+    return ReadsFormatWriteOption.valueOf(name()); // one-to-one correspondence between names
   }
 
-  public static SamFormat fromFormatWriteOption(
-      HtsjdkReadsRddStorage.FormatWriteOption formatWriteOption) {
+  public static SamFormat fromFormatWriteOption(ReadsFormatWriteOption formatWriteOption) {
     return valueOf(formatWriteOption.name());
   }
 
@@ -58,16 +70,12 @@ public enum SamFormat {
     return null;
   }
 
-  public AbstractSamSource createAbstractSamSource(FileSystemWrapper fileSystemWrapper) {
-    switch (this) {
-      case BAM:
-        return new BamSource(fileSystemWrapper);
-      case CRAM:
-        return new CramSource(fileSystemWrapper);
-      case SAM:
-        return new SamSource();
-      default:
-        throw new IllegalArgumentException("File does not end in BAM, CRAM, or SAM extension.");
-    }
+  public static FileCardinalityWriteOption fileCardinalityWriteOptionFromPath(String path) {
+    return fromPath(path) == null ? MULTIPLE : SINGLE;
+  }
+
+  public static ReadsFormatWriteOption formatWriteOptionFromPath(String path) {
+    SamFormat samFormat = fromPath(path);
+    return samFormat == null ? null : samFormat.toFormatWriteOption();
   }
 }

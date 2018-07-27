@@ -37,7 +37,7 @@ public class AnySamTestUtil {
   public static String writeAnySamFile(
       int numPairs,
       SAMFileHeader.SortOrder sortOrder,
-      HtsjdkReadsRddStorage.FormatWriteOption formatWriteOption,
+      ReadsFormatWriteOption formatWriteOption,
       String refPath)
       throws IOException {
     SamFormat samFormat = SamFormat.fromFormatWriteOption(formatWriteOption);

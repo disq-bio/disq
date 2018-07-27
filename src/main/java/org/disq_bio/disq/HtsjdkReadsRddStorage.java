@@ -10,85 +10,11 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
-import org.disq_bio.disq.impl.formats.bam.BamSink;
-import org.disq_bio.disq.impl.formats.cram.CramSink;
-import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSource;
-import org.disq_bio.disq.impl.formats.sam.AnySamSinkMultiple;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
-import org.disq_bio.disq.impl.formats.sam.SamSink;
 
 /** The entry point for reading or writing a {@link HtsjdkReadsRdd}. */
 public class HtsjdkReadsRddStorage {
-
-  /** An option for configuring how to write a {@link HtsjdkReadsRdd}. */
-  public interface WriteOption {
-    static AbstractSamSink getSink(
-        FormatWriteOption formatWriteOption,
-        FileCardinalityWriteOption fileCardinalityWriteOption) {
-      switch (fileCardinalityWriteOption) {
-        case SINGLE:
-          switch (formatWriteOption) {
-            case BAM:
-              return new BamSink();
-            case CRAM:
-              return new CramSink();
-            case SAM:
-              return new SamSink();
-            default:
-              throw new IllegalArgumentException("Unrecognized format: " + formatWriteOption);
-          }
-        case MULTIPLE:
-          return new AnySamSinkMultiple(SamFormat.fromFormatWriteOption(formatWriteOption));
-        default:
-          throw new IllegalArgumentException(
-              "Unrecognized cardinality: " + fileCardinalityWriteOption);
-      }
-    }
-  }
-
-  /** An option for configuring which format to write a {@link HtsjdkReadsRdd} as. */
-  public enum FormatWriteOption implements WriteOption {
-    /** BAM format */
-    BAM,
-    /** CRAM format */
-    CRAM,
-    /** SAM format */
-    SAM;
-
-    static FormatWriteOption fromPath(String path) {
-      SamFormat samFormat = SamFormat.fromPath(path);
-      return samFormat == null ? null : samFormat.toFormatWriteOption();
-    }
-  }
-
-  /** An option for configuring the number of files to write a {@link HtsjdkReadsRdd} as. */
-  public enum FileCardinalityWriteOption implements WriteOption {
-    /** Write a single file specified by the path. */
-    SINGLE,
-    /** Write multiple files in a directory specified by the path. */
-    MULTIPLE;
-
-    static FileCardinalityWriteOption fromPath(String path) {
-      return SamFormat.fromPath(path) == null ? MULTIPLE : SINGLE;
-    }
-  }
-
-  /**
-   * An option for controlling which directory to write temporary part files to when writing a
-   * {@link HtsjdkReadsRdd} as a single file.
-   */
-  public static class TempPartsDirectoryWriteOption implements WriteOption {
-    private String tempPartsDirectory;
-
-    public TempPartsDirectoryWriteOption(String tempPartsDirectory) {
-      this.tempPartsDirectory = tempPartsDirectory;
-    }
-
-    String getTempPartsDirectory() {
-      return tempPartsDirectory;
-    }
-  }
 
   private JavaSparkContext sparkContext;
   private int splitSize;
@@ -212,17 +138,17 @@ public class HtsjdkReadsRddStorage {
    * @param htsjdkReadsRdd a {@link HtsjdkReadsRdd} containing the header and the reads
    * @param path the file or directory to write to
    * @param writeOptions options to control aspects of how to write the reads (e.g. {@link
-   *     FormatWriteOption} and {@link FileCardinalityWriteOption}
+   *     ReadsFormatWriteOption} and {@link FileCardinalityWriteOption}
    * @throws IOException if an IO error occurs while writing
    */
   public void write(HtsjdkReadsRdd htsjdkReadsRdd, String path, WriteOption... writeOptions)
       throws IOException {
-    FormatWriteOption formatWriteOption = null;
+    ReadsFormatWriteOption formatWriteOption = null;
     FileCardinalityWriteOption fileCardinalityWriteOption = null;
     TempPartsDirectoryWriteOption tempPartsDirectoryWriteOption = null;
     for (WriteOption writeOption : writeOptions) {
-      if (writeOption instanceof FormatWriteOption) {
-        formatWriteOption = (FormatWriteOption) writeOption;
+      if (writeOption instanceof ReadsFormatWriteOption) {
+        formatWriteOption = (ReadsFormatWriteOption) writeOption;
       } else if (writeOption instanceof FileCardinalityWriteOption) {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
@@ -231,7 +157,7 @@ public class HtsjdkReadsRddStorage {
     }
 
     if (formatWriteOption == null) {
-      formatWriteOption = FormatWriteOption.fromPath(path);
+      formatWriteOption = SamFormat.formatWriteOptionFromPath(path);
     }
 
     if (formatWriteOption == null) {
@@ -240,7 +166,7 @@ public class HtsjdkReadsRddStorage {
     }
 
     if (fileCardinalityWriteOption == null) {
-      fileCardinalityWriteOption = FileCardinalityWriteOption.fromPath(path);
+      fileCardinalityWriteOption = SamFormat.fileCardinalityWriteOptionFromPath(path);
     }
 
     String tempPartsDirectory = null;
@@ -250,7 +176,8 @@ public class HtsjdkReadsRddStorage {
       tempPartsDirectory = path + ".parts";
     }
 
-    WriteOption.getSink(formatWriteOption, fileCardinalityWriteOption)
+    fileCardinalityWriteOption
+        .getAbstractSamSink(formatWriteOption)
         .save(
             sparkContext,
             htsjdkReadsRdd.getHeader(),

@@ -14,7 +14,6 @@ import java.util.Collections;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.spark.api.java.JavaRDD;
-import org.disq_bio.disq.HtsjdkVariantsRddStorage.FormatWriteOption;
 import org.disq_bio.disq.impl.formats.vcf.VcfFormat;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,18 +24,19 @@ public class HtsjdkVariantsRddTest extends BaseTest {
 
   private Object[] parametersForTestReadAndWrite() {
     return new Object[][] {
-      {"test.vcf", FormatWriteOption.VCF, 128 * 1024},
-      {"test.vcf", FormatWriteOption.VCF_GZ, 128 * 1024},
-      {"test.vcf", FormatWriteOption.VCF_BGZ, 128 * 1024},
-      {"test.vcf.bgz", FormatWriteOption.VCF, 128 * 1024},
-      {"test.vcf.bgzf.gz", FormatWriteOption.VCF, 128 * 1024},
-      {"test.vcf.gz", FormatWriteOption.VCF, 128 * 1024},
+      {"test.vcf", VariantsFormatWriteOption.VCF, 128 * 1024},
+      {"test.vcf", VariantsFormatWriteOption.VCF_GZ, 128 * 1024},
+      {"test.vcf", VariantsFormatWriteOption.VCF_BGZ, 128 * 1024},
+      {"test.vcf.bgz", VariantsFormatWriteOption.VCF, 128 * 1024},
+      {"test.vcf.bgzf.gz", VariantsFormatWriteOption.VCF, 128 * 1024},
+      {"test.vcf.gz", VariantsFormatWriteOption.VCF, 128 * 1024},
     };
   }
 
   @Test
   @Parameters
-  public void testReadAndWrite(String inputFile, FormatWriteOption formatWriteOption, int splitSize)
+  public void testReadAndWrite(
+      String inputFile, VariantsFormatWriteOption formatWriteOption, int splitSize)
       throws IOException, URISyntaxException {
     String inputPath = getPath(inputFile);
     VcfFormat outputVcfFormat = VcfFormat.fromFormatWriteOption(formatWriteOption);
@@ -71,16 +71,16 @@ public class HtsjdkVariantsRddTest extends BaseTest {
 
   private Object[] parametersForTestReadAndWriteMultiple() {
     return new Object[][] {
-      {"HiSeq.10000.vcf.bgz", 128 * 1024, FormatWriteOption.VCF},
-      {"HiSeq.10000.vcf.bgz", 128 * 1024, FormatWriteOption.VCF_GZ},
-      {"HiSeq.10000.vcf.bgz", 128 * 1024, FormatWriteOption.VCF_BGZ},
+      {"HiSeq.10000.vcf.bgz", 128 * 1024, VariantsFormatWriteOption.VCF},
+      {"HiSeq.10000.vcf.bgz", 128 * 1024, VariantsFormatWriteOption.VCF_GZ},
+      {"HiSeq.10000.vcf.bgz", 128 * 1024, VariantsFormatWriteOption.VCF_BGZ},
     };
   }
 
   @Test
   @Parameters
   public void testReadAndWriteMultiple(
-      String inputFile, int splitSize, FormatWriteOption formatWriteOption)
+      String inputFile, int splitSize, VariantsFormatWriteOption formatWriteOption)
       throws IOException, URISyntaxException {
     String inputPath = getPath(inputFile);
 
@@ -100,10 +100,7 @@ public class HtsjdkVariantsRddTest extends BaseTest {
     // write as multiple VCF files
     String outputPath = createTempPath("");
     htsjdkVariantsRddStorage.write(
-        htsjdkVariantsRdd,
-        outputPath,
-        HtsjdkVariantsRddStorage.FileCardinalityWriteOption.MULTIPLE,
-        formatWriteOption);
+        htsjdkVariantsRdd, outputPath, FileCardinalityWriteOption.MULTIPLE, formatWriteOption);
 
     // check the new file has the number of expected variants
     int totalCount = 0;

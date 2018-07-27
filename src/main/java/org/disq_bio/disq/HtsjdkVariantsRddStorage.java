@@ -7,74 +7,11 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.disq_bio.disq.impl.formats.vcf.AbstractVcfSink;
 import org.disq_bio.disq.impl.formats.vcf.VcfFormat;
-import org.disq_bio.disq.impl.formats.vcf.VcfSink;
-import org.disq_bio.disq.impl.formats.vcf.VcfSinkMultiple;
 import org.disq_bio.disq.impl.formats.vcf.VcfSource;
 
 /** The entry point for reading or writing a {@link HtsjdkVariantsRdd}. */
 public class HtsjdkVariantsRddStorage {
-
-  /** An option for configuring how to write a {@link HtsjdkVariantsRdd}. */
-  public interface WriteOption {
-    static AbstractVcfSink getSink(
-        FormatWriteOption formatWriteOption,
-        FileCardinalityWriteOption fileCardinalityWriteOption) {
-      switch (fileCardinalityWriteOption) {
-        case SINGLE:
-          return new VcfSink();
-        case MULTIPLE:
-          return new VcfSinkMultiple(VcfFormat.fromFormatWriteOption(formatWriteOption));
-        default:
-          throw new IllegalArgumentException(
-              "Unrecognized cardinality: " + fileCardinalityWriteOption);
-      }
-    }
-  }
-
-  /** An option for configuring which format to write a {@link HtsjdkVariantsRdd} as. */
-  public enum FormatWriteOption implements WriteOption {
-    /** VCF format */
-    VCF,
-    /** block compressed VCF format (.vcf.bgz) */
-    VCF_BGZ,
-    /** block compressed VCF format (.vcf.gz) */
-    VCF_GZ;
-
-    static FormatWriteOption fromPath(String path) {
-      VcfFormat vcfFormat = VcfFormat.fromPath(path);
-      return vcfFormat == null ? null : vcfFormat.toFormatWriteOption();
-    }
-  }
-
-  /** An option for configuring the number of files to write a {@link HtsjdkVariantsRdd} as. */
-  public enum FileCardinalityWriteOption implements WriteOption {
-    /** Write a single file specified by the path. */
-    SINGLE,
-    /** Write multiple files in a directory specified by the path. */
-    MULTIPLE;
-
-    static FileCardinalityWriteOption fromPath(String path) {
-      return VcfFormat.fromPath(path) == null ? MULTIPLE : SINGLE;
-    }
-  }
-
-  /**
-   * An option for controlling which directory to write temporary part files to when writing a
-   * {@link HtsjdkVariantsRdd} as a single file.
-   */
-  public static class TempPartsDirectoryWriteOption implements HtsjdkReadsRddStorage.WriteOption {
-    private String tempPartsDirectory;
-
-    public TempPartsDirectoryWriteOption(String tempPartsDirectory) {
-      this.tempPartsDirectory = tempPartsDirectory;
-    }
-
-    String getTempPartsDirectory() {
-      return tempPartsDirectory;
-    }
-  }
 
   private JavaSparkContext sparkContext;
   private int splitSize;
@@ -140,17 +77,17 @@ public class HtsjdkVariantsRddStorage {
    * @param htsjdkVariantsRdd a {@link HtsjdkVariantsRdd} containing the header and the variants
    * @param path the file or directory to write to
    * @param writeOptions options to control aspects of how to write the variants (e.g. {@link
-   *     FormatWriteOption} and {@link FileCardinalityWriteOption}
+   *     VariantsFormatWriteOption} and {@link FileCardinalityWriteOption}
    * @throws IOException if an IO error occurs while writing
    */
   public void write(HtsjdkVariantsRdd htsjdkVariantsRdd, String path, WriteOption... writeOptions)
       throws IOException {
-    FormatWriteOption formatWriteOption = null;
+    VariantsFormatWriteOption formatWriteOption = null;
     FileCardinalityWriteOption fileCardinalityWriteOption = null;
     TempPartsDirectoryWriteOption tempPartsDirectoryWriteOption = null;
     for (WriteOption writeOption : writeOptions) {
-      if (writeOption instanceof FormatWriteOption) {
-        formatWriteOption = (FormatWriteOption) writeOption;
+      if (writeOption instanceof VariantsFormatWriteOption) {
+        formatWriteOption = (VariantsFormatWriteOption) writeOption;
       } else if (writeOption instanceof FileCardinalityWriteOption) {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
@@ -159,7 +96,7 @@ public class HtsjdkVariantsRddStorage {
     }
 
     if (formatWriteOption == null) {
-      formatWriteOption = FormatWriteOption.fromPath(path);
+      formatWriteOption = VcfFormat.formatWriteOptionFromPath(path);
     }
 
     if (formatWriteOption == null) {
@@ -168,7 +105,7 @@ public class HtsjdkVariantsRddStorage {
     }
 
     if (fileCardinalityWriteOption == null) {
-      fileCardinalityWriteOption = FileCardinalityWriteOption.fromPath(path);
+      fileCardinalityWriteOption = VcfFormat.fileCardinalityWriteOptionFromPath(path);
     }
 
     String tempPartsDirectory = null;
@@ -178,7 +115,8 @@ public class HtsjdkVariantsRddStorage {
       tempPartsDirectory = path + ".parts";
     }
 
-    WriteOption.getSink(formatWriteOption, fileCardinalityWriteOption)
+    fileCardinalityWriteOption
+        .getAbstractVcfSink(formatWriteOption)
         .save(
             sparkContext,
             htsjdkVariantsRdd.getHeader(),

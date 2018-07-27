@@ -1,6 +1,10 @@
 package org.disq_bio.disq.impl.formats.vcf;
 
-import org.disq_bio.disq.HtsjdkVariantsRddStorage;
+import static org.disq_bio.disq.FileCardinalityWriteOption.MULTIPLE;
+import static org.disq_bio.disq.FileCardinalityWriteOption.SINGLE;
+
+import org.disq_bio.disq.FileCardinalityWriteOption;
+import org.disq_bio.disq.VariantsFormatWriteOption;
 
 public enum VcfFormat {
   VCF(".vcf", ".idx", false),
@@ -33,13 +37,11 @@ public enum VcfFormat {
     return compressed;
   }
 
-  public HtsjdkVariantsRddStorage.FormatWriteOption toFormatWriteOption() {
-    return HtsjdkVariantsRddStorage.FormatWriteOption.valueOf(
-        name()); // one-to-one correspondence between names
+  public VariantsFormatWriteOption toFormatWriteOption() {
+    return VariantsFormatWriteOption.valueOf(name()); // one-to-one correspondence between names
   }
 
-  public static VcfFormat fromFormatWriteOption(
-      HtsjdkVariantsRddStorage.FormatWriteOption formatWriteOption) {
+  public static VcfFormat fromFormatWriteOption(VariantsFormatWriteOption formatWriteOption) {
     return valueOf(formatWriteOption.name());
   }
 
@@ -59,5 +61,14 @@ public enum VcfFormat {
       }
     }
     return null;
+  }
+
+  public static FileCardinalityWriteOption fileCardinalityWriteOptionFromPath(String path) {
+    return fromPath(path) == null ? MULTIPLE : SINGLE;
+  }
+
+  public static VariantsFormatWriteOption formatWriteOptionFromPath(String path) {
+    VcfFormat vcfFormat = fromPath(path);
+    return vcfFormat == null ? null : vcfFormat.toFormatWriteOption();
   }
 }

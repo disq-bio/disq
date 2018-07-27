@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import org.disq_bio.disq.HtsjdkReadsRddStorage.FormatWriteOption;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,16 +23,16 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
   private Object[] parametersForTestReadAndWrite() {
     return new Object[][] {
-      {"1.bam", null, FormatWriteOption.BAM, 128 * 1024, false},
-      {"1.bam", null, FormatWriteOption.BAM, 128 * 1024, true},
-      {"valid.cram", "valid.fasta", FormatWriteOption.CRAM, 128 * 1024, false},
-      {"valid.cram", "valid.fasta", FormatWriteOption.CRAM, 128 * 1024, true},
-      {"valid_no_index.cram", "valid.fasta", FormatWriteOption.CRAM, 128 * 1024, false},
-      {"test.sam", null, FormatWriteOption.SAM, 128 * 1024, false},
+      {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
+      {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
+      {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
+      {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, true},
+      {"valid_no_index.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
+      {"test.sam", null, ReadsFormatWriteOption.SAM, 128 * 1024, false},
       {
         "gs://genomics-public-data/NA12878.chr20.sample.bam",
         null,
-        FormatWriteOption.BAM,
+        ReadsFormatWriteOption.BAM,
         128 * 1024,
         true
       }
@@ -45,7 +44,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
   public void testReadAndWrite(
       String inputFile,
       String cramReferenceFile,
-      FormatWriteOption formatWriteOption,
+      ReadsFormatWriteOption formatWriteOption,
       int splitSize,
       boolean useNio)
       throws Exception {
@@ -104,16 +103,16 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
   private Object[] parametersForTestReadAndWriteMultiple() {
     return new Object[][] {
-      {null, false, FormatWriteOption.BAM},
-      {"test.fa", false, FormatWriteOption.CRAM},
-      {null, false, FormatWriteOption.SAM},
+      {null, false, ReadsFormatWriteOption.BAM},
+      {"test.fa", false, ReadsFormatWriteOption.CRAM},
+      {null, false, ReadsFormatWriteOption.SAM},
     };
   }
 
   @Test
   @Parameters
   public void testReadAndWriteMultiple(
-      String cramReferenceFile, boolean useNio, FormatWriteOption formatWriteOption)
+      String cramReferenceFile, boolean useNio, ReadsFormatWriteOption formatWriteOption)
       throws Exception {
 
     String refPath = getPath(cramReferenceFile);
@@ -141,10 +140,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
     // write as multiple BAM/CRAM/SAM files
     String outputPath = createTempPath("");
     htsjdkReadsRddStorage.write(
-        htsjdkReadsRdd,
-        outputPath,
-        HtsjdkReadsRddStorage.FileCardinalityWriteOption.MULTIPLE,
-        formatWriteOption);
+        htsjdkReadsRdd, outputPath, FileCardinalityWriteOption.MULTIPLE, formatWriteOption);
 
     // check the new file has the number of expected reads
     int totalCount = 0;
@@ -174,7 +170,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             false),
-        FormatWriteOption.BAM
+        ReadsFormatWriteOption.BAM
       },
       {
         null,
@@ -183,7 +179,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 1, 1000135) // covers whole chromosome
                 ),
             false),
-        FormatWriteOption.BAM
+        ReadsFormatWriteOption.BAM
       },
       {
         null,
@@ -192,13 +188,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             true),
-        FormatWriteOption.BAM
+        ReadsFormatWriteOption.BAM
       },
-      {null, new HtsjdkReadsTraversalParameters<>(null, true), FormatWriteOption.BAM},
+      {null, new HtsjdkReadsTraversalParameters<>(null, true), ReadsFormatWriteOption.BAM},
       {
         null,
         new HtsjdkReadsTraversalParameters<>(Collections.emptyList(), true),
-        FormatWriteOption.BAM
+        ReadsFormatWriteOption.BAM
       },
       {
         "test.fa",
@@ -207,7 +203,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             false),
-        FormatWriteOption.CRAM
+        ReadsFormatWriteOption.CRAM
       },
       {
         "test.fa",
@@ -216,7 +212,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 1, 1000135) // covers whole chromosome
                 ),
             false),
-        FormatWriteOption.CRAM
+        ReadsFormatWriteOption.CRAM
       },
       {
         "test.fa",
@@ -225,13 +221,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             true),
-        FormatWriteOption.CRAM
+        ReadsFormatWriteOption.CRAM
       },
-      {"test.fa", new HtsjdkReadsTraversalParameters<>(null, true), FormatWriteOption.CRAM},
+      {"test.fa", new HtsjdkReadsTraversalParameters<>(null, true), ReadsFormatWriteOption.CRAM},
       {
         "test.fa",
         new HtsjdkReadsTraversalParameters<>(Collections.emptyList(), true),
-        FormatWriteOption.CRAM
+        ReadsFormatWriteOption.CRAM
       },
       {
         null,
@@ -240,7 +236,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             false),
-        FormatWriteOption.SAM
+        ReadsFormatWriteOption.SAM
       },
       {
         null,
@@ -249,7 +245,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 1, 1000135) // covers whole chromosome
                 ),
             false),
-        FormatWriteOption.SAM
+        ReadsFormatWriteOption.SAM
       },
       {
         null,
@@ -258,13 +254,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
                 new Interval("chr21", 5000, 9999), // includes two unpaired fragments
                 new Interval("chr21", 20000, 22999)),
             true),
-        FormatWriteOption.SAM
+        ReadsFormatWriteOption.SAM
       },
-      {null, new HtsjdkReadsTraversalParameters<>(null, true), FormatWriteOption.SAM},
+      {null, new HtsjdkReadsTraversalParameters<>(null, true), ReadsFormatWriteOption.SAM},
       {
         null,
         new HtsjdkReadsTraversalParameters<>(Collections.emptyList(), true),
-        FormatWriteOption.SAM
+        ReadsFormatWriteOption.SAM
       },
     };
   }
@@ -274,7 +270,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
   public <T extends Locatable> void testReadIntervals(
       String cramReferenceFile,
       HtsjdkReadsTraversalParameters<T> traversalParameters,
-      FormatWriteOption formatWriteOption)
+      ReadsFormatWriteOption formatWriteOption)
       throws Exception {
     String refPath = getPath(cramReferenceFile);
 
@@ -297,7 +293,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     // also check the count with samtools (except for SAM since it cannot do intervals)
     if (SamtoolsTestUtil.isSamtoolsAvailable()
-        && !formatWriteOption.equals(FormatWriteOption.SAM)) {
+        && !formatWriteOption.equals(ReadsFormatWriteOption.SAM)) {
       int expectedCountSamtools =
           SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);
       Assert.assertEquals(expectedCountSamtools, htsjdkReadsRdd.getReads().count());
@@ -308,7 +304,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
   public void testMappedOnlyFails() throws Exception {
     String inputPath =
         AnySamTestUtil.writeAnySamFile(
-            1000, SAMFileHeader.SortOrder.coordinate, FormatWriteOption.BAM, null);
+            1000, SAMFileHeader.SortOrder.coordinate, ReadsFormatWriteOption.BAM, null);
 
     HtsjdkReadsRddStorage htsjdkReadsRddStorage =
         HtsjdkReadsRddStorage.makeDefault(jsc).splitSize(40000).useNio(false);
