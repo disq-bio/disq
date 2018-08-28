@@ -12,14 +12,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
 
-    <repositories>
-        <!-- for GCS patch -->
-        <repository>
-            <id>broad</id>
-            <url>https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>com.github.samtools</groupId>
@@ -68,9 +60,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.broadinstitute</groupId>
-            <artifactId>google-cloud-nio-GATK4-custom-patch</artifactId>
-            <version>0.20.4-alpha-GCS-RETRY-FIX</version>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-nio</artifactId>
+            <version>0.59.0-alpha</version>
             <classifier>shaded</classifier>
             <scope>test</scope>
         </dependency>
