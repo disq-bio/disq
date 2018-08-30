@@ -37,7 +37,7 @@ public class HtsjdkReadsRddStorage {
   }
 
   /**
-   * @param splitSize the requested size of file splits when reading
+   * @param splitSize the requested size of file splits in bytes when reading
    * @return the current {@link HtsjdkReadsRddStorage}
    */
   public HtsjdkReadsRddStorage splitSize(int splitSize) {

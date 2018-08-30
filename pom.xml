@@ -10,13 +10,16 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
+        <htsjdk.version>2.16.0</htsjdk.version>
+        <hadoop.version>2.7.0</hadoop.version>
+        <spark.version>2.2.2</spark.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.github.samtools</groupId>
             <artifactId>htsjdk</artifactId>
-            <version>2.16.0</version>
+            <version>${htsjdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -26,13 +29,13 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <version>2.7.0</version>
+            <version>${hadoop.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.11</artifactId>
-            <version>2.0.2</version>
+            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -50,7 +53,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minicluster</artifactId>
-            <version>2.7.0</version>
+            <version>${hadoop.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
