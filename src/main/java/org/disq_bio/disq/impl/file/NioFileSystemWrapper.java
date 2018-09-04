@@ -71,7 +71,7 @@ public class NioFileSystemWrapper implements FileSystemWrapper {
 
   @Override
   public List<String> listDirectory(Configuration conf, String path) throws IOException {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override

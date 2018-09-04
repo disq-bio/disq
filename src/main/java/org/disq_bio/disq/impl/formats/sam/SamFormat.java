@@ -15,9 +15,9 @@ public enum SamFormat {
   CRAM(".cram", ".crai", CramSource::new),
   SAM(".sam", null, fileSystemWrapper -> new SamSource());
 
-  private String extension;
-  private String indexExtension;
-  private Function<FileSystemWrapper, AbstractSamSource> sourceProvider;
+  private final String extension;
+  private final String indexExtension;
+  private final Function<FileSystemWrapper, AbstractSamSource> sourceProvider;
 
   SamFormat(
       String extension,
