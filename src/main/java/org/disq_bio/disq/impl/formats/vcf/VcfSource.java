@@ -14,6 +14,7 @@ import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,14 +97,18 @@ public class VcfSource implements Serializable {
     }
     enableBGZFCodecs(conf);
 
-    Broadcast<VCFCodec> vcfCodecBroadcast = jsc.broadcast(getVCFCodec(jsc, path));
+    VCFCodec vcfCodec = getVCFCodec(jsc, path);
+    VCFHeader header = vcfCodec.getHeader();
+    VCFHeaderVersion version = vcfCodec.getVersion();
+    Broadcast<VCFHeader> headerBroadcast = jsc.broadcast(header);
     Broadcast<List<T>> intervalsBroadcast = intervals == null ? null : jsc.broadcast(intervals);
 
     return textFile(jsc, conf, path, intervals)
         .mapPartitions(
             (FlatMapFunction<Iterator<String>, VariantContext>)
                 lines -> {
-                  VCFCodec codec = vcfCodecBroadcast.getValue();
+                  VCFCodec codec = new VCFCodec();
+                  codec.setVCFHeader(headerBroadcast.getValue(), version);
                   final OverlapDetector<T> overlapDetector =
                       intervalsBroadcast == null
                           ? null
