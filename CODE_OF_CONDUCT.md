@@ -40,7 +40,7 @@ Project maintainers who do not follow or enforce the Code of Conduct in good fai
 
 ## Escalation
 
-To report an issue with the project leadership team, please contact [contact_person]
+To report an issue with the project leadership team, please contact Dr. Anthony D. Joseph, Ph.D., Chancellor's Professor, University of California, Berkeley.
 
 ## Attribution
 
