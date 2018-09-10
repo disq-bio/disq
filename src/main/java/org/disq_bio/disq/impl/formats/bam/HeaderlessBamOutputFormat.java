@@ -5,6 +5,7 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.util.BinaryCodec;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +32,7 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
 
     public BamRecordWriter(Configuration conf, Path file, SAMFileHeader header) throws IOException {
       this.out = file.getFileSystem(conf).create(file);
-      BlockCompressedOutputStream compressedOut = new BlockCompressedOutputStream(out, null);
+      BlockCompressedOutputStream compressedOut = new BlockCompressedOutputStream(out, (File) null);
       binaryCodec = new BinaryCodec(compressedOut);
       bamRecordCodec = new BAMRecordCodec(header);
       bamRecordCodec.setOutputStream(compressedOut);
