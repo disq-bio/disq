@@ -99,6 +99,7 @@ public class VcfSource implements Serializable {
 
     VCFCodec vcfCodec = getVCFCodec(jsc, path);
     VCFHeader header = vcfCodec.getHeader();
+    // get the version separately since htsjdk doesn't provide a way to get it from the header
     VCFHeaderVersion version = vcfCodec.getVersion();
     Broadcast<VCFHeader> headerBroadcast = jsc.broadcast(header);
     Broadcast<List<T>> intervalsBroadcast = intervals == null ? null : jsc.broadcast(intervals);
@@ -107,6 +108,7 @@ public class VcfSource implements Serializable {
         .mapPartitions(
             (FlatMapFunction<Iterator<String>, VariantContext>)
                 lines -> {
+                  // VCFCodec is not threadsafe, so create a new one for each task
                   VCFCodec codec = new VCFCodec();
                   codec.setVCFHeader(headerBroadcast.getValue(), version);
                   final OverlapDetector<T> overlapDetector =
