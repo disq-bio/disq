@@ -16,6 +16,8 @@ import scala.Tuple2;
 
 public class PathSplitSource implements Serializable {
 
+  private static final int DEFAULT_NIO_SPLIT_SIZE = 128 * 1024 * 1024;
+
   private final FileSystemWrapper fileSystemWrapper;
 
   /** @param fileSystemWrapper the filesystem wrapper to use when constructing splits. */
@@ -29,15 +31,17 @@ public class PathSplitSource implements Serializable {
       // Use Java NIO by creating splits with Spark parallelize. File locality is not maintained,
       // but this is not an issue if reading from a cloud store.
 
+      long actualSplitSize = splitSize <= 0 ? DEFAULT_NIO_SPLIT_SIZE : splitSize;
       long len = fileSystemWrapper.getFileLength(null, path);
-      int numSplits = (int) Math.ceil((double) len / splitSize);
+      int numSplits = (int) Math.ceil((double) len / actualSplitSize);
 
       List<Long> range = LongStream.range(0, numSplits).boxed().collect(Collectors.toList());
       return jsc.parallelize(range, numSplits)
-          .map(idx -> idx * splitSize)
+          .map(idx -> idx * actualSplitSize)
           .flatMap(
               splitStart -> {
-                final long splitEnd = splitStart + splitSize > len ? len : splitStart + splitSize;
+                final long splitEnd =
+                    splitStart + actualSplitSize > len ? len : splitStart + actualSplitSize;
                 return Collections.singleton(new PathSplit(path, splitStart, splitEnd)).iterator();
               });
     } else {

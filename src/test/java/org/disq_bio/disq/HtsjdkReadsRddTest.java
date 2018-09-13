@@ -35,6 +35,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
         ReadsFormatWriteOption.BAM,
         128 * 1024,
         true
+      },
+      {
+        "gs://genomics-public-data/NA12878.chr20.sample.bam",
+        null,
+        ReadsFormatWriteOption.BAM,
+        0,
+        true
       }
     };
   }
