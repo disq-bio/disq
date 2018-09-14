@@ -42,7 +42,24 @@ public class HtsjdkReadsRddTest extends BaseTest {
         ReadsFormatWriteOption.BAM,
         0,
         true
-      }
+      },
+      // The split size 76458 was chosen since it is a bgzf block boundary, and it exposes a bug
+      // where reads were included in both splits either side of the boundary. See
+      // BamSourceTest#testPathChunksDontOverlap
+      {
+        "HiSeq.1mb.1RG.2k_lines.alternate.recalibrated.DIQ.sharded.bam/part-r-00000.bam",
+        null,
+        ReadsFormatWriteOption.BAM,
+        76458,
+        false
+      },
+      {
+        "HiSeq.1mb.1RG.2k_lines.alternate.recalibrated.DIQ.sharded.bam/part-r-00000.bam",
+        null,
+        ReadsFormatWriteOption.BAM,
+        76458,
+        false
+      },
     };
   }
 
