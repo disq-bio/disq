@@ -21,7 +21,7 @@ import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.HtsjdkReadsRdd;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
@@ -32,6 +32,8 @@ import org.disq_bio.disq.impl.formats.bgzf.BgzfBlockGuesser;
 import org.disq_bio.disq.impl.formats.bgzf.BgzfBlockSource;
 import org.disq_bio.disq.impl.formats.sam.AbstractBinarySamSource;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Load reads from a BAM file on Spark.
@@ -40,6 +42,8 @@ import org.disq_bio.disq.impl.formats.sam.SamFormat;
  * @see HtsjdkReadsRdd
  */
 public class BamSource extends AbstractBinarySamSource implements Serializable {
+
+  private static final Logger logger = LoggerFactory.getLogger(BamSource.class);
 
   private static final int MAX_READ_SIZE = 10_000_000;
 
@@ -68,6 +72,7 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
 
     String sbiPath = path + SBIIndex.FILE_EXTENSION;
     if (fileSystemWrapper.exists(jsc.hadoopConfiguration(), sbiPath)) {
+      logger.debug("Using SBI file {} for finding splits", sbiPath);
       try (SeekableStream sbiStream = fileSystemWrapper.open(jsc.hadoopConfiguration(), sbiPath)) {
         SBIIndex sbiIndex = SBIIndex.load(sbiStream);
         Broadcast<SBIIndex> sbiIndexBroadcast = jsc.broadcast(sbiIndex);
@@ -80,27 +85,32 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
                   if (chunk == null) {
                     return Collections.emptyIterator();
                   } else {
-                    return Collections.singleton(new PathChunk(path, chunk)).iterator();
+                    PathChunk pathChunk = new PathChunk(path, chunk);
+                    logger.debug("PathChunk: {}", pathChunk);
+                    return Collections.singleton(pathChunk).iterator();
                   }
                 });
       }
     }
 
+    logger.debug("Using guessing for finding splits");
     SerializableHadoopConfiguration confSer =
         new SerializableHadoopConfiguration(jsc.hadoopConfiguration());
     return bgzfBlockSource
         .getBgzfBlocks(jsc, path, splitSize)
-        .mapPartitions(
-            (FlatMapFunction<Iterator<BgzfBlockGuesser.BgzfBlock>, PathChunk>)
-                bgzfBlocks -> {
+        .mapPartitionsWithIndex(
+            (Function2<Integer, Iterator<BgzfBlockGuesser.BgzfBlock>, Iterator<PathChunk>>)
+                (partitionIndex, bgzfBlocks) -> {
                   Configuration conf = confSer.getConf();
                   PathChunk pathChunk =
                       getFirstReadInPartition(conf, bgzfBlocks, stringency, referenceSourcePath);
+                  logger.debug("PathChunk for partition {}: {}", partitionIndex, pathChunk);
                   if (pathChunk == null) {
                     return Collections.emptyIterator();
                   }
                   return Collections.singleton(pathChunk).iterator();
-                });
+                },
+            true);
   }
 
   /**
