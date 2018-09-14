@@ -134,10 +134,7 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
             return null;
           }
           long vPos = BlockCompressedFilePointerUtil.makeFilePointer(block.pos, up);
-          // As the guesser goes to the next BGZF block before looking for BAM
-          // records, the ending BGZF blocks have to always be traversed fully.
-          // Hence force the length to be 0xffff, the maximum possible.
-          long vEnd = BlockCompressedFilePointerUtil.makeFilePointer(block.end, 0xffff);
+          long vEnd = BlockCompressedFilePointerUtil.makeFilePointer(block.end); // end is exclusive
           if (bamRecordGuesser.checkRecordStart(vPos)) {
             block.end();
             return new PathChunk(partitionPath, new Chunk(vPos, vEnd));

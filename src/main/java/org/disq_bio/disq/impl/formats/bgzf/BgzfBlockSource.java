@@ -67,7 +67,7 @@ public class BgzfBlockSource implements Serializable {
 
       @Override
       protected BgzfBlock advance() {
-        if (start > splitEnd) {
+        if (start >= splitEnd) { // splitEnd is exclusive, so if we reach it then stop
           bgzfBlockGuesser.close();
           return null; // end iteration
         }
