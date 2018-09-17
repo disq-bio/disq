@@ -26,19 +26,25 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.BAMFileWriter;
+import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.file.BaiMerger;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.HiddenFileFilter;
 import org.disq_bio.disq.impl.file.Merger;
 import org.disq_bio.disq.impl.file.SBIMerger;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
@@ -68,11 +74,13 @@ public class BamSink extends AbstractSamSink {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
     boolean writeSbiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
+    boolean writeBaiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
     reads
         .mapPartitions(
             readIterator -> {
               HeaderlessBamOutputFormat.setHeader(headerBroadcast.getValue());
               HeaderlessBamOutputFormat.setWriteSbiFile(writeSbiFile);
+              HeaderlessBamOutputFormat.setWriteBaiFile(writeBaiFile);
               HeaderlessBamOutputFormat.setSbiIndexGranularity(sbiIndexGranularity);
               return readIterator;
             })
@@ -96,6 +104,17 @@ public class BamSink extends AbstractSamSink {
       out.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
     }
 
+    List<String> parts =
+        fileSystemWrapper
+            .listDirectory(jsc.hadoopConfiguration(), tempPartsDirectory)
+            .stream()
+            .filter(new HiddenFileFilter())
+            .collect(Collectors.toList());
+    List<Long> partLengths = new ArrayList<>();
+    for (String part : parts) {
+      partLengths.add(fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), part));
+    }
+
     new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
     long fileLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), path);
     if (writeSbiFile) {
@@ -106,6 +125,15 @@ public class BamSink extends AbstractSamSink {
               path + SBIIndex.FILE_EXTENSION,
               headerLength,
               fileLength);
+    }
+    if (writeBaiFile) {
+      new BaiMerger(fileSystemWrapper)
+          .mergeParts(
+              jsc.hadoopConfiguration(),
+              tempPartsDirectory,
+              path + BAMIndex.BAMIndexSuffix,
+              header,
+              partLengths);
     }
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
   }

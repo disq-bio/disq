@@ -25,9 +25,15 @@
  */
 package org.disq_bio.disq.impl.formats.bam;
 
+import htsjdk.samtools.BAMFileSpan;
+import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.BAMIndexer2;
 import htsjdk.samtools.BAMRecordCodec;
+import htsjdk.samtools.Chunk;
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMFileSource;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SAMRecordHelper;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.BinaryCodec;
@@ -60,9 +66,18 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
     private final BinaryCodec binaryCodec;
     private final BAMRecordCodec bamRecordCodec;
     private final SBIIndexWriter sbiIndexWriter;
+    private final BAMIndexer2 bamIndexer;
+
+    private SAMRecord previousSamRecord;
+    private Chunk previousSamRecordChunk;
 
     public BamRecordWriter(
-        Configuration conf, Path file, SAMFileHeader header, Path sbiFile, long sbiIndexGranularity)
+        Configuration conf,
+        Path file,
+        SAMFileHeader header,
+        Path sbiFile,
+        Path baiFile,
+        long sbiIndexGranularity)
         throws IOException {
       this.conf = conf;
       this.file = file;
@@ -77,32 +92,68 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
       } else {
         this.sbiIndexWriter = null;
       }
+      if (baiFile != null) {
+        this.bamIndexer = new BAMIndexer2(baiFile.getFileSystem(conf).create(baiFile), header);
+      } else {
+        this.bamIndexer = null;
+      }
     }
 
     @Override
     public void write(Void ignore, SAMRecord samRecord) {
+      if (bamIndexer != null && previousSamRecord != null) {
+        // index the previous record since we know it's not the last one (which needs special
+        // handling, see the close method)
+        SAMRecordHelper.setFileSource(
+            previousSamRecord, new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
+        bamIndexer.processAlignment(previousSamRecord);
+      }
+      final long startOffset = compressedOut.getFilePointer();
       if (sbiIndexWriter != null) {
         sbiIndexWriter.processRecord(compressedOut.getFilePointer());
       }
       bamRecordCodec.encode(samRecord);
+      final long stopOffset = compressedOut.getFilePointer();
+      previousSamRecord = samRecord;
+      previousSamRecordChunk = new Chunk(startOffset, stopOffset);
     }
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException {
-      binaryCodec.getOutputStream().flush();
       // don't close BlockCompressedOutputStream since we don't want to write the
-      // terminator
+      // terminator - just flush to write out the final BGZF block
+      binaryCodec.getOutputStream().flush();
       out.close();
+
       long finalVirtualOffset = compressedOut.getFilePointer();
+
       long dataFileLength = file.getFileSystem(conf).getFileStatus(file).getLen();
       if (sbiIndexWriter != null) {
         sbiIndexWriter.finish(finalVirtualOffset, dataFileLength);
+      }
+
+      // Adjust the end of the chunk in previousSamRecordChunk so that it is a valid virtual offset
+      // the flush operation (above) forces the final block to be written out, and makes sure
+      // that finalVirtualOffset has an uncompressed offset of 0, which is always valid even after
+      // concatenating BGZF files and shifting their virtual offsets.
+      // If we didn't do this then we would have an invalid virtual file pointer if a BGZF file
+      // were concatenated following this one.
+      if (bamIndexer != null) {
+        if (previousSamRecord != null) {
+          previousSamRecordChunk =
+              new Chunk(previousSamRecordChunk.getChunkStart(), finalVirtualOffset);
+          SAMRecordHelper.setFileSource(
+              previousSamRecord, new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
+          bamIndexer.processAlignment(previousSamRecord);
+        }
+        bamIndexer.finish();
       }
     }
   }
 
   private static SAMFileHeader header;
   private static boolean writeSbiFile;
+  private static boolean writeBaiFile;
   private static long sbiIndexGranularity;
 
   public static void setHeader(SAMFileHeader samFileHeader) {
@@ -111,6 +162,10 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
 
   public static void setWriteSbiFile(boolean writeSbiFile) {
     HeaderlessBamOutputFormat.writeSbiFile = writeSbiFile;
+  }
+
+  public static void setWriteBaiFile(boolean writeBaiFile) {
+    HeaderlessBamOutputFormat.writeBaiFile = writeBaiFile;
   }
 
   public static void setSbiIndexGranularity(long sbiIndexGranularity) {
@@ -128,7 +183,13 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
     } else {
       sbiFile = null;
     }
+    Path baiFile;
+    if (writeBaiFile) {
+      baiFile = new Path(file.getParent(), "." + file.getName() + BAMIndex.BAMIndexSuffix);
+    } else {
+      baiFile = null;
+    }
     return new BamRecordWriter(
-        taskAttemptContext.getConfiguration(), file, header, sbiFile, sbiIndexGranularity);
+        taskAttemptContext.getConfiguration(), file, header, sbiFile, baiFile, sbiIndexGranularity);
   }
 }
