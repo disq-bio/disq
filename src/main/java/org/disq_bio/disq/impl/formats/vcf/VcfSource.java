@@ -14,6 +14,7 @@ import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFHeaderVersion;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,14 +97,21 @@ public class VcfSource implements Serializable {
     }
     enableBGZFCodecs(conf);
 
-    Broadcast<VCFCodec> vcfCodecBroadcast = jsc.broadcast(getVCFCodec(jsc, path));
-    Broadcast<List<T>> intervalsBroadcast = intervals == null ? null : jsc.broadcast(intervals);
+    final VCFCodec vcfCodec = getVCFCodec(jsc, path);
+    final VCFHeader header = vcfCodec.getHeader();
+    // get the version separately since htsjdk doesn't provide a way to get it from the header
+    final VCFHeaderVersion version = vcfCodec.getVersion();
+    final Broadcast<VCFHeader> headerBroadcast = jsc.broadcast(header);
+    final Broadcast<List<T>> intervalsBroadcast =
+        intervals == null ? null : jsc.broadcast(intervals);
 
     return textFile(jsc, conf, path, intervals)
         .mapPartitions(
             (FlatMapFunction<Iterator<String>, VariantContext>)
                 lines -> {
-                  VCFCodec codec = vcfCodecBroadcast.getValue();
+                  // VCFCodec is not threadsafe, so create a new one for each task
+                  final VCFCodec codec = new VCFCodec();
+                  codec.setVCFHeader(headerBroadcast.getValue(), version);
                   final OverlapDetector<T> overlapDetector =
                       intervalsBroadcast == null
                           ? null

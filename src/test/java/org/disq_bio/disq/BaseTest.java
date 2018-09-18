@@ -20,7 +20,7 @@ public abstract class BaseTest {
   public static void setup() {
     SparkConf sparkConf = new SparkConf();
     sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-    jsc = new JavaSparkContext("local", "myapp", sparkConf);
+    jsc = new JavaSparkContext("local[*]", "myapp", sparkConf);
   }
 
   @AfterClass

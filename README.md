@@ -246,7 +246,7 @@ The following tests all the [GATK 'large' files](https://github.com/broadinstitu
 ```
 mvn verify \
     -Ddisq.test.real.world.files.dir=/home/gatk/src/test/resources/large \
-    -Ddisq.test.real.world.files.ref=/homegatk/src/test/resources/large/human_g1k_v37.20.21.fasta \
+    -Ddisq.test.real.world.files.ref=/home/gatk/src/test/resources/large/human_g1k_v37.20.21.fasta \
     -Ddisq.samtools.bin=/path/to/bin/samtools \
     -Ddisq.bcftools.bin=/path/to/bin/bcftools
 ```

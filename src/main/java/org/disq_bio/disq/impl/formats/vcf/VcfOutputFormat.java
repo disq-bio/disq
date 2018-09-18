@@ -5,6 +5,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
@@ -33,7 +34,7 @@ public class VcfOutputFormat extends FileOutputFormat<Void, VariantContext> {
       boolean compressed =
           extension.endsWith(BGZFCodec.DEFAULT_EXTENSION) || extension.endsWith(".gz");
       if (compressed) {
-        out = new BlockCompressedOutputStream(out, null);
+        out = new BlockCompressedOutputStream(out, (File) null);
       }
       variantContextWriter =
           new VariantContextWriterBuilder().clearOptions().setOutputVCFStream(out).build();
