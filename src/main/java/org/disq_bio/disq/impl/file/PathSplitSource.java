@@ -25,6 +25,17 @@ public class PathSplitSource implements Serializable {
     this.fileSystemWrapper = fileSystemWrapper;
   }
 
+  /**
+   * Load {@link PathSplit}s for the given filesystem path.
+   *
+   * @param jsc the Spark context to use
+   * @param path the path to load splits for
+   * @param splitSize the requested size of file splits in bytes. If zero, the default split size
+   *     for the Hadoop file system will be used (for the Hadoop filesystem wrapper), or for NIO
+   *     splits of size 128MB will be used.
+   * @return an RDD of path splits
+   * @throws IOException if an IO error occurs
+   */
   public JavaRDD<PathSplit> getPathSplits(JavaSparkContext jsc, String path, int splitSize)
       throws IOException {
     if (fileSystemWrapper.usesNio()) {
