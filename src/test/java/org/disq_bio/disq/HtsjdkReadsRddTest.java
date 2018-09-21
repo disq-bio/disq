@@ -58,7 +58,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
         null,
         ReadsFormatWriteOption.BAM,
         76458,
-        false
+        true
       },
     };
   }
