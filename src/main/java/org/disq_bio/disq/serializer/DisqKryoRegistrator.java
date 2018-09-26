@@ -40,6 +40,15 @@ public final class DisqKryoRegistrator implements KryoRegistrator {
     // htsjdk.samtools.util
     kryo.register(htsjdk.samtools.util.Interval.class);
 
+    // htsjdk.variant.variantcontext
+    kryo.register(htsjdk.variant.variantcontext.Allele.class);
+    kryo.register(htsjdk.variant.variantcontext.CommonInfo.class);
+    kryo.register(htsjdk.variant.variantcontext.FastGenotype.class);
+    kryo.register(htsjdk.variant.variantcontext.GenotypeType.class);
+    kryo.register(htsjdk.variant.variantcontext.LazyGenotypesContext.class);
+    kryo.register(htsjdk.variant.variantcontext.VariantContext.class);
+    kryo.register(htsjdk.variant.variantcontext.VariantContext.Type.class);
+
     // htsjdk.variant.vcf
     kryo.register(htsjdk.variant.vcf.VCFCompoundHeaderLine.SupportedHeaderLineType.class);
     kryo.register(htsjdk.variant.vcf.VCFContigHeaderLine.class);
@@ -66,6 +75,7 @@ public final class DisqKryoRegistrator implements KryoRegistrator {
         java.util.Collections.singletonList("").getClass(),
         new CollectionsSingletonListSerializer());
     kryo.register(java.util.HashMap.class);
+    kryo.register(java.util.HashSet.class);
     kryo.register(java.util.LinkedHashMap.class);
     registerByName(kryo, "java.util.LinkedHashMap$Entry");
     registerByName(kryo, "java.util.LinkedHashMap$LinkedValueIterator");
