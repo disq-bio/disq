@@ -18,16 +18,23 @@ public final class DisqKryoRegistrator implements KryoRegistrator {
     // Sort alphabetically and add blank lines between packages
 
     // htsjdk.samtools
+    kryo.register(htsjdk.samtools.AlignmentBlock.class);
     kryo.register(htsjdk.samtools.Chunk.class);
+    kryo.register(htsjdk.samtools.Cigar.class);
+    kryo.register(htsjdk.samtools.CigarElement.class);
+    kryo.register(htsjdk.samtools.CigarOperator.class);
+    kryo.register(htsjdk.samtools.SAMBinaryTagAndValue.class);
     kryo.register(htsjdk.samtools.SAMFileHeader.class);
     kryo.register(htsjdk.samtools.SAMFileHeader.GroupOrder.class);
     kryo.register(htsjdk.samtools.SAMFileHeader.SortOrder.class);
     kryo.register(htsjdk.samtools.SAMProgramRecord.class);
     kryo.register(htsjdk.samtools.SAMReadGroupRecord.class);
+    kryo.register(htsjdk.samtools.SAMRecord.class);
     kryo.register(htsjdk.samtools.SAMSequenceDictionary.class);
     kryo.register(htsjdk.samtools.SAMSequenceRecord.class);
     kryo.register(htsjdk.samtools.SBIIndex.class);
     kryo.register(htsjdk.samtools.SBIIndex.Header.class);
+    kryo.register(htsjdk.samtools.ValidationStringency.class);
 
     // htsjdk.samtools.cram.ref
     kryo.register(htsjdk.samtools.cram.ref.ReferenceSource.class);
