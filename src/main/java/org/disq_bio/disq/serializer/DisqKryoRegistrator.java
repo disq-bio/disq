@@ -1,5 +1,7 @@
 package org.disq_bio.disq.serializer;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.esotericsoftware.kryo.Kryo;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
@@ -8,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Kryo registrator for Disq. */
-public final class DisqKryoRegistrator implements KryoRegistrator {
+public class DisqKryoRegistrator implements KryoRegistrator {
   private final Logger logger = LoggerFactory.getLogger(DisqKryoRegistrator.class);
 
   @Override
@@ -130,5 +132,15 @@ public final class DisqKryoRegistrator implements KryoRegistrator {
     } catch (ClassNotFoundException e) {
       logger.debug("Unable to register class {} by name", e, className);
     }
+  }
+
+  /**
+   * Register all classes serialized in Disq with the specified Kryo instance.
+   *
+   * @param kryo Kryo instance to register all classes serialized in Disq with, must not be null
+   */
+  public static final void registerDisqClasses(final Kryo kryo) {
+    checkNotNull(kryo);
+    new DisqKryoRegistrator().registerClasses(kryo);
   }
 }
