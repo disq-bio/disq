@@ -71,6 +71,9 @@ public class HtsjdkVariantsRddTest extends BaseTest {
 
     HtsjdkVariantsRdd htsjdkVariantsRdd = htsjdkVariantsRddStorage.read(inputPath);
 
+    // reduce to realize the RDD of variants
+    Assert.assertNotNull(htsjdkVariantsRdd.getVariants().first());
+
     // read the file using htsjdk to get expected number of reads, then count the number in the RDD
     int expectedCount = countVariants(inputPath);
     Assert.assertEquals(expectedCount, htsjdkVariantsRdd.getVariants().count());
