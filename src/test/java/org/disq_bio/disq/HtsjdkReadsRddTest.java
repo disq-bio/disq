@@ -108,6 +108,9 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
 
+    // reduce to realize the RDD of reads
+    Assert.assertNotNull(htsjdkReadsRdd.getReads().first());
+
     // read the file using htsjdk to get expected number of reads, then count the number in the RDD
     int expectedCount = AnySamTestUtil.countReads(inputPath, refPath);
     Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
