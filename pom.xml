@@ -12,6 +12,8 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <htsjdk.version>2.16.1</htsjdk.version>
         <hadoop.version>2.7.0</hadoop.version>
+        <mockito.version>2.22.0</mockito.version>
+        <kryo-serializers.version>0.42</kryo-serializers.version>
         <spark.version>2.2.2</spark.version>
     </properties>
 
@@ -20,6 +22,11 @@
             <groupId>com.github.samtools</groupId>
             <artifactId>htsjdk</artifactId>
             <version>${htsjdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.javakaffee</groupId>
+            <artifactId>kryo-serializers</artifactId>
+            <version>${kryo-serializers.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -37,6 +44,12 @@
             <artifactId>spark-core_2.11</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
