@@ -30,19 +30,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
       {"valid_no_index.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
       {"test.sam", null, ReadsFormatWriteOption.SAM, 128 * 1024, false},
       {
-        "gs://genomics-public-data/NA12878.chr20.sample.bam",
+        "gs://disq-test-data/NA12878.chr20.sample.bam",
         null,
         ReadsFormatWriteOption.BAM,
         128 * 1024,
         true
       },
-      {
-        "gs://genomics-public-data/NA12878.chr20.sample.bam",
-        null,
-        ReadsFormatWriteOption.BAM,
-        0,
-        true
-      },
+      {"gs://disq-test-data/NA12878.chr20.sample.bam", null, ReadsFormatWriteOption.BAM, 0, true},
       // The split size 76458 was chosen since it is a bgzf block boundary, and it exposes a bug
       // where reads were included in both splits either side of the boundary. See
       // BamSourceTest#testPathChunksDontOverlap
