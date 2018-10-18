@@ -28,8 +28,10 @@ package org.disq_bio.disq.serializer;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import org.apache.spark.serializer.KryoRegistrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ public class DisqKryoRegistrator implements KryoRegistrator {
 
     // htsjdk.samtools
     kryo.register(htsjdk.samtools.AlignmentBlock.class);
+    kryo.register(htsjdk.samtools.BAMRecord.class);
     kryo.register(htsjdk.samtools.Chunk.class);
     kryo.register(htsjdk.samtools.Cigar.class);
     kryo.register(htsjdk.samtools.CigarElement.class);
@@ -79,7 +82,8 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     kryo.register(htsjdk.variant.variantcontext.CommonInfo.class);
     kryo.register(htsjdk.variant.variantcontext.FastGenotype.class);
     kryo.register(htsjdk.variant.variantcontext.GenotypeType.class);
-    kryo.register(htsjdk.variant.variantcontext.LazyGenotypesContext.class);
+    // Use JavaSerializer for LazyGenotypesContext to handle transient fields correctly
+    kryo.register(htsjdk.variant.variantcontext.LazyGenotypesContext.class, new JavaSerializer());
     kryo.register(htsjdk.variant.variantcontext.VariantContext.class);
     kryo.register(htsjdk.variant.variantcontext.VariantContext.Type.class);
 
@@ -115,6 +119,8 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     registerByName(kryo, "java.util.LinkedHashMap$LinkedValueIterator");
     kryo.register(java.util.LinkedHashSet.class);
     kryo.register(java.util.TreeSet.class);
+
+    UnmodifiableCollectionsSerializer.registerSerializers(kryo);
 
     // org.apache.spark.internal.io
     kryo.register(org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage.class);
