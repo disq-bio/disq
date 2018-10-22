@@ -6,6 +6,19 @@
     <groupId>org.disq-bio</groupId>
     <artifactId>disq</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <url>https://github.com/disq-bio/disq</url>
+    <inceptionYear>2018</inceptionYear>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>Disq contributors</name>
+        <url>https://github.com/disq-bio</url>
+    </organization>
 
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -118,6 +131,38 @@
                 <version>2.5.1</version>
                 <executions>
                     <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Run 'mvn license:format' to add new headers. -->
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <header>LICENSE_header.txt</header>
+                    <strictCheck>true</strictCheck>
+                    <properties>
+                        <owner>Disq contributors</owner>
+                    </properties>
+                    <includes>
+                        <include>**/src/main/java/**</include>
+                        <include>**/src/test/java/**</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/htsjdk/samtools/**/*</exclude>
+                    </excludes>
+                    <mapping>
+                        <!-- Don't use the default javadoc comments, since fmt-maven-plugin will try to reformat -->
+                        <java>SLASHSTAR_STYLE</java>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
