@@ -1,7 +1,7 @@
 language: java
 jdk:
   - oraclejdk8
-  - openjdk
+  - openjdk8
 env:
   - NO_GCE_CHECK=true
 cache:
