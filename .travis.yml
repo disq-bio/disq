@@ -1,5 +1,9 @@
 language: java
 jdk:
   - oraclejdk8
+  - openjdk8
 env:
   - NO_GCE_CHECK=true
+cache:
+  directories:
+    - $HOME/.m2
