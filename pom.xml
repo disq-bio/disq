@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.disq-bio</groupId>
     <artifactId>disq</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>Disq</name>
     <description>A library for manipulating bioinformatics sequencing formats in Apache Spark.</description>
     <url>https://github.com/disq-bio/disq</url>
@@ -250,7 +249,7 @@
         <connection>scm:git:https://github.com/disq-bio/disq</connection>
         <developerConnection>scm:git:https://github.com/disq-bio/disq</developerConnection>
         <url>https://github.com/disq-bio/disq</url>
-        <tag>master</tag>
+        <tag>disq-0.1.0</tag>
     </scm>
 
     <distributionManagement>
