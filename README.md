@@ -2,7 +2,9 @@
 
 A library for manipulating bioinformatics sequencing formats in Apache Spark.
 
-*NOTE: this is alpha software - everything is in flux at the moment*
+[![Build Status](https://travis-ci.org/disq-bio/disq.svg?branch=master)](https://travis-ci.org/disq-bio/disq)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Motivation
 
@@ -170,25 +172,10 @@ All read and write paths are tested on real files from the field (multi-GB in si
 [Samtools and Bcftools](http://www.htslib.org/download/) are used to verify that files written with this library can be
 read successfully.
 
-## Building
-
-There are no releases in Maven Central yet, so you need to build the JAR yourself by running
-
-```bash
-mvn install
-```
-
-Then to use the library in your project, add the following dependency to your Maven POM:
-
-```xml
-<dependency>
-    <groupId>org.disq-bio</groupId>
-    <artifactId>disq</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-</dependency>
-```
-
 ## Usage
+
+Add the dependency from [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq)
+
 
 ```java
 // First get a Spark context
@@ -250,3 +237,40 @@ mvn verify \
     -Ddisq.samtools.bin=/path/to/bin/samtools \
     -Ddisq.bcftools.bin=/path/to/bin/bcftools
 ```
+
+## Performing a release
+
+To perform a release you need commit rights to the repository, a key in the
+`KEYS` file, and an account on [https://oss.sonatype.org/](https://oss.sonatype.org/)
+with permission to write to the `disq-bio` Maven group ID.
+
+To [perform a snapshot deployment](https://central.sonatype.org/pages/apache-maven.html#performing-a-snapshot-deployment)
+run
+
+```
+mvn clean deploy -Prelease
+```
+
+If you get the error `gpg: signing failed: Inappropriate ioctl for device` then
+run this first:
+
+```
+export GPG_TTY=$(tty)
+```
+
+To [perform a release deployment](https://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin)
+run 
+
+```
+mvn release:clean release:prepare
+mvn release:perform
+```
+
+You will be prompted for the version number (note that the default may not be
+correct), and the release tag, which should be of the form `disq-x.y.z`.
+
+Inspect and release the deployed artifacts manually by logging into
+[https://oss.sonatype.org/](https://oss.sonatype.org/). Find the repository
+you just created, under "Staging Repositories", then "Close" and "Release" it.
+
+You should see the artifacts appear in the [central repository](http://central.maven.org/maven2/org/disq-bio/disq/) in around 10 minutes.
