@@ -135,6 +135,9 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     // org.disq_bio.disq.impl.formats.bgzf
     kryo.register(org.disq_bio.disq.impl.formats.bgzf.BgzfBlockGuesser.BgzfBlock.class);
 
+    // scala.collection.immutable
+    registerByName(kryo, "scala.collection.immutable.Set$EmptySet$");
+
     // scala.collection.mutable
     kryo.register(scala.collection.mutable.WrappedArray.ofRef.class);
 
