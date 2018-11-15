@@ -36,7 +36,39 @@ import org.apache.spark.serializer.KryoRegistrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Kryo registrator for Disq. */
+/**
+ * Kryo registrator for Disq.
+ *
+ * <p>To use this class, specify the following Spark configuration parameters
+ *
+ * <pre>
+ * spark.serializer=org.apache.spark.serializer.KryoSerializer
+ * spark.kryo.registrator=org.disq_bio.disq.serializer.DisqKryoRegistrator
+ * spark.kryo.registrationRequired=true
+ * </pre>
+ *
+ * To include the classes registered here in your own registrator, either extend DisqKryoRegistrator
+ *
+ * <pre>
+ * class MyKryoRegistrator extends DisqKryoRegistrator {
+ *   public void registerClasses(final Kryo kryo) {
+ *     super.registerClasses(kryo);
+ *     kryo.register(MyClass.class);
+ *   }
+ * }
+ * </pre>
+ *
+ * or extend by delegation
+ *
+ * <pre>
+ * class MyKryoRegistrator implements KryoRegistrator {
+ *   public void registerClasses(final Kryo kryo) {
+ *     DisqKryoRegistrator.registerDisqClasses(kryo);
+ *     kryo.register(MyClass.class);
+ *   }
+ * }
+ * </pre>
+ */
 public class DisqKryoRegistrator implements KryoRegistrator {
   private final Logger logger = LoggerFactory.getLogger(DisqKryoRegistrator.class);
 

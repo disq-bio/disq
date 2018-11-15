@@ -89,6 +89,7 @@ public final class SBIIndex implements Serializable {
   /**
    * Create an in-memory SBI with the given virtual offsets.
    *
+   * @param header header
    * @param virtualOffsets the offsets in the index
    */
   public SBIIndex(final Header header, final long[] virtualOffsets) {
@@ -103,6 +104,7 @@ public final class SBIIndex implements Serializable {
    * Load an SBI into memory from a path.
    *
    * @param path the path to the SBI file
+   * @return SBI index
    * @throws IOException as per java IO contract
    */
   public static SBIIndex load(final Path path) throws IOException {
@@ -115,6 +117,7 @@ public final class SBIIndex implements Serializable {
    * Load an SBI into memory from a stream.
    *
    * @param in the stream to read the SBI from
+   * @return SBI index
    */
   public static SBIIndex load(final InputStream in) {
     return readIndex(in);

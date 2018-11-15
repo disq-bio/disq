@@ -96,8 +96,12 @@ public class BamRecordGuesserChecker implements Serializable {
    * Check all positions in the BAM file specified by the path, using an SBI index for the BAM
    * (which is generated if it doesn't exist).
    *
+   * @param jsc Spark context
+   * @param path path
+   * @param splitSize split size
    * @return a pair RDD where the key is the virtual file offset, and the value indicates if the
    *     guess was a false positive or a false negative
+   * @throws IOException if an I/O error occurs
    */
   public JavaPairRDD<Long, RecordStartResult> check(
       JavaSparkContext jsc, String path, int splitSize) throws IOException {
@@ -107,8 +111,13 @@ public class BamRecordGuesserChecker implements Serializable {
   /**
    * Check all positions in the BAM file specified by the path, using the given SBI index.
    *
+   * @param jsc Spark context
+   * @param path path
+   * @param splitSize split size
+   * @param sbiIndex SBI index
    * @return a pair RDD where the key is the virtual file offset, and the value indicates if the
    *     guess was a false positive or a false negative
+   * @throws IOException if an I/O error occurs
    */
   public JavaPairRDD<Long, RecordStartResult> check(
       JavaSparkContext jsc, String path, int splitSize, SBIIndex sbiIndex) throws IOException {

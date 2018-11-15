@@ -73,7 +73,7 @@ public class BgzfBlockGuesser implements Closeable {
      * Signals that this is the last block in a partition, and that the guesser should close its
      * resources.
      *
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     public void end() throws IOException {
       in.close();
