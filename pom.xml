@@ -33,10 +33,10 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <htsjdk.version>2.16.1</htsjdk.version>
-        <hadoop.version>2.7.0</hadoop.version>
+        <hadoop.version>2.7.5</hadoop.version>
         <mockito.version>2.22.0</mockito.version>
         <kryo-serializers.version>0.42</kryo-serializers.version>
-        <spark.version>2.2.2</spark.version>
+        <spark.version>2.3.2</spark.version>
     </properties>
 
     <dependencies>
