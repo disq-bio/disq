@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
@@ -46,7 +47,7 @@ import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.HiddenFileFilter;
 import org.disq_bio.disq.impl.file.Merger;
-import org.disq_bio.disq.impl.file.SBIMerger;
+import org.disq_bio.disq.impl.file.SbiMerger;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import scala.Tuple2;
 
@@ -73,8 +74,9 @@ public class BamSink extends AbstractSamSink {
       throws IOException {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
-    boolean writeSbiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
+    boolean writeSbiFile = true;
     boolean writeBaiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
+    Configuration conf = jsc.hadoopConfiguration();
     reads
         .mapPartitions(
             readIterator -> {
@@ -87,54 +89,42 @@ public class BamSink extends AbstractSamSink {
         .mapToPair(
             (PairFunction<SAMRecord, Void, SAMRecord>) samRecord -> new Tuple2<>(null, samRecord))
         .saveAsNewAPIHadoopFile(
-            tempPartsDirectory,
-            Void.class,
-            SAMRecord.class,
-            HeaderlessBamOutputFormat.class,
-            jsc.hadoopConfiguration());
+            tempPartsDirectory, Void.class, SAMRecord.class, HeaderlessBamOutputFormat.class, conf);
 
     String headerFile = tempPartsDirectory + "/header";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, headerFile)) {
       BAMFileWriter.writeHeader(out, header);
     }
-    long headerLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), headerFile);
+    long headerLength = fileSystemWrapper.getFileLength(conf, headerFile);
 
     String terminatorFile = tempPartsDirectory + "/terminator";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), terminatorFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, terminatorFile)) {
       out.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
     }
 
-    List<String> parts =
+    List<String> bamParts =
         fileSystemWrapper
-            .listDirectory(jsc.hadoopConfiguration(), tempPartsDirectory)
+            .listDirectory(conf, tempPartsDirectory)
             .stream()
             .filter(new HiddenFileFilter())
             .collect(Collectors.toList());
     List<Long> partLengths = new ArrayList<>();
-    for (String part : parts) {
-      partLengths.add(fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), part));
+    for (String part : bamParts) {
+      partLengths.add(fileSystemWrapper.getFileLength(conf, part));
     }
 
-    new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
-    long fileLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), path);
+    new Merger().mergeParts(conf, tempPartsDirectory, path);
+    long fileLength = fileSystemWrapper.getFileLength(conf, path);
     if (writeSbiFile) {
-      new SBIMerger(fileSystemWrapper)
+      new SbiMerger(fileSystemWrapper)
           .mergeParts(
-              jsc.hadoopConfiguration(),
-              tempPartsDirectory,
-              path + SBIIndex.FILE_EXTENSION,
-              headerLength,
-              fileLength);
+              conf, tempPartsDirectory, path + SBIIndex.FILE_EXTENSION, headerLength, fileLength);
     }
     if (writeBaiFile) {
       new BaiMerger(fileSystemWrapper)
           .mergeParts(
-              jsc.hadoopConfiguration(),
-              tempPartsDirectory,
-              path + BAMIndex.BAMIndexSuffix,
-              header,
-              partLengths);
+              conf, tempPartsDirectory, path + BAMIndex.BAMIndexSuffix, header, partLengths);
     }
-    fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
+    fileSystemWrapper.delete(conf, tempPartsDirectory);
   }
 }

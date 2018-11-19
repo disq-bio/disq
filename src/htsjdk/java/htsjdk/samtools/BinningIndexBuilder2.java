@@ -32,6 +32,10 @@ import static htsjdk.samtools.GenomicIndexUtil.MAX_BINS;
 
 /**
  * Builder for a BinningIndexContent object.
+ *
+ * Note this class is identical to {@link BinningIndexBuilder} in htsjdk, except
+ * it keeps unitialized windows as -1 so that we can distinguish alignment == 0
+ * from no alignment.
  */
 public class BinningIndexBuilder2 {
     private static final int UNINITIALIZED_WINDOW = -1;
@@ -171,6 +175,7 @@ public class BinningIndexBuilder2 {
         long lastNonZeroOffset = 0;
         for (int i = 0; i <= largestIndexSeen; i++) {
             if (index[i] == UNINITIALIZED_WINDOW) {
+                // Difference from regular BinningIndexBuilder.
                 // Following line removed so that we can distinguish alignment == 0 from no alignment.
                 // Note this is only for temporary intermediate BAI files.
                 //index[i] = lastNonZeroOffset; // not necessary, but C (samtools index) does this

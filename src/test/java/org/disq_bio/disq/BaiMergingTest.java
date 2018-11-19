@@ -45,6 +45,7 @@ import java.nio.file.Paths;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -53,11 +54,14 @@ public class BaiMergingTest extends BaseTest {
 
   private Object[] parametersForTest() throws IOException {
     String dir = "src/test/resources";
-    return java.nio.file.Files.walk(Paths.get(dir))
-        .filter(p -> p.toString().endsWith(".bam"))
-        .filter(p -> size(p) > 64 * 1024)
-        .filter(BaiMergingTest::isCoordinateSorted)
-        .toArray();
+    Object[] objects =
+        Files.walk(Paths.get(dir))
+            .filter(p -> p.toString().endsWith(".bam"))
+            .filter(p -> size(p) > 64 * 1024)
+            .filter(BaiMergingTest::isCoordinateSorted)
+            .toArray();
+    Assert.assertTrue(objects.length > 0);
+    return objects;
   }
 
   private static long size(Path p) {

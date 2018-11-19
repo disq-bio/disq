@@ -36,13 +36,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SBIMerger {
+public class SbiMerger {
 
-  private static final Logger logger = LoggerFactory.getLogger(SBIMerger.class);
+  private static final Logger logger = LoggerFactory.getLogger(SbiMerger.class);
 
   private final FileSystemWrapper fileSystemWrapper;
 
-  public SBIMerger(FileSystemWrapper fileSystemWrapper) {
+  public SbiMerger(FileSystemWrapper fileSystemWrapper) {
     this.fileSystemWrapper = fileSystemWrapper;
   }
 
@@ -53,7 +53,7 @@ public class SBIMerger {
       long headerLength,
       long fileLength)
       throws IOException {
-    logger.info("Merging files in temp directory {} to {}", tempPartsDirectory, outputFile);
+    logger.info("Merging .sbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
     List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
     List<String> filteredParts =
         parts
@@ -70,5 +70,6 @@ public class SBIMerger {
       }
       sbiIndexMerger.finish(fileLength);
     }
+    logger.info("Done merging .sbi files");
   }
 }

@@ -117,7 +117,7 @@ public final class SBIIndexWriter {
    * @param md5 the MD5 hash of the data file, or null if not specified
    * @param uuid the UUID for the data file, or null if not specified
    */
-  public void finish(long finalVirtualOffset, long dataFileLength, byte[] md5, byte[] uuid) {
+  private void finish(long finalVirtualOffset, long dataFileLength, byte[] md5, byte[] uuid) {
     if (md5 != null && md5.length != 16) {
       throw new IllegalArgumentException("Invalid MD5 length: " + md5.length);
     }
@@ -141,16 +141,7 @@ public final class SBIIndexWriter {
 
     try (BinaryCodec binaryCodec = new BinaryCodec(out);
         InputStream tempOffsets = new BufferedInputStream(new FileInputStream(tempOffsetsFile))) {
-      // header
-      binaryCodec.writeBytes(SBIIndex.SBI_MAGIC);
-      binaryCodec.writeLong(header.getFileLength());
-      binaryCodec.writeBytes(header.getMd5());
-      binaryCodec.writeBytes(header.getUuid());
-      binaryCodec.writeLong(header.getTotalNumberOfRecords());
-      binaryCodec.writeLong(header.getGranularity());
-      binaryCodec.writeLong(virtualOffsetCount);
-
-      // offsets
+      writeHeader(header, binaryCodec);
       IOUtil.copyStream(tempOffsets, out);
     } catch (IOException e) {
       throw new RuntimeIOException(e);
@@ -158,4 +149,15 @@ public final class SBIIndexWriter {
       tempOffsetsFile.delete();
     }
   }
+
+  private void writeHeader(SBIIndex.Header header, BinaryCodec binaryCodec) {
+    binaryCodec.writeBytes(SBIIndex.SBI_MAGIC);
+    binaryCodec.writeLong(header.getFileLength());
+    binaryCodec.writeBytes(header.getMd5());
+    binaryCodec.writeBytes(header.getUuid());
+    binaryCodec.writeLong(header.getTotalNumberOfRecords());
+    binaryCodec.writeLong(header.getGranularity());
+    binaryCodec.writeLong(virtualOffsetCount);
+  }
+
 }

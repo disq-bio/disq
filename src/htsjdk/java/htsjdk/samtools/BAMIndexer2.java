@@ -37,6 +37,9 @@ import java.util.function.Function;
  * 2) Building a bam index while building the bam file
  * In both cases, processAlignment is called for each alignment record and
  * finish() is called at the end.
+ *
+ * Note this class is identical to {@link BAMIndexer} in htsjdk, except it uses
+ * {@link BinningIndexBuilder2}.
  */
 public class BAMIndexer2 {
 

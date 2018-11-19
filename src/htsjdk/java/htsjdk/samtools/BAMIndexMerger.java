@@ -9,11 +9,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Merges BAM index files for (headerless) parts of a BAM file into a single
+ * index file. The index files must have been produced using {@link BAMIndexer2}.
+ */
 public class BAMIndexMerger {
 
   private static final int UNINITIALIZED_WINDOW = -1;
 
-  public void merge(
+  /**
+   * Merge BAI files for (headerless) BAM file parts.
+   * @param header the header for the file
+   * @param partLengths the lengths, in bytes, of the headerless BAM file parts
+   * @param baiStreams streams for the BAI files to merge
+   * @param baiOut the output stream for the resulting merged BAI
+   */
+  public static void merge(
       SAMFileHeader header,
       List<Long> partLengths,
       List<SeekableStream> baiStreams,
@@ -30,7 +41,7 @@ public class BAMIndexMerger {
     for (AbstractBAMFileIndex bai : bais) {
       if (bai.getNumberOfReferences() != numReferences) {
         throw new IllegalArgumentException(
-            "Cannot merge BAI files with different number of references");
+            String.format("Cannot merge BAI files with different number of references, %s and %s.", numReferences, bai.getNumberOfReferences()));
       }
     }
     long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
@@ -54,7 +65,7 @@ public class BAMIndexMerger {
     }
   }
 
-  private BAMIndexContent mergeBAMIndexContent(int referenceSequence,
+  private static BAMIndexContent mergeBAMIndexContent(int referenceSequence,
                                 List<BAMIndexContent> bamIndexContentList, long[] offsets) {
     List<BinningIndexContent.BinList> binLists = new ArrayList<>();
     List<BAMIndexMetaData> metaDataList = new ArrayList<>();
@@ -71,7 +82,7 @@ public class BAMIndexMerger {
         mergeLinearIndexes(referenceSequence, linearIndexes, offsets));
   }
 
-  private BinningIndexContent.BinList mergeBins(List<BinningIndexContent.BinList> binLists, long[] offsets) {
+  private static BinningIndexContent.BinList mergeBins(List<BinningIndexContent.BinList> binLists, long[] offsets) {
     List<Bin> mergedBins = new ArrayList<>();
     int maxBinNumber = binLists.stream().mapToInt(bl -> bl.maxBinNumber).max().orElse(0);
     int commonNonNullBins = 0;
@@ -94,7 +105,7 @@ public class BAMIndexMerger {
     return new BinningIndexContent.BinList(mergedBins.toArray(new Bin[0]), numberOfNonNullBins);
   }
 
-  private Bin mergeBins(List<Bin> bins) {
+  private static Bin mergeBins(List<Bin> bins) {
     if (bins.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge empty bins");
     }
@@ -141,7 +152,7 @@ public class BAMIndexMerger {
     return bin;
   }
 
-  private BAMIndexMetaData mergeMetaData(List<BAMIndexMetaData> metaDataList, long[] offsets) {
+  private static BAMIndexMetaData mergeMetaData(List<BAMIndexMetaData> metaDataList, long[] offsets) {
     List<BAMIndexMetaData> newMetadataList = new ArrayList<>();
     for (int i = 0; i < metaDataList.size(); i++) {
       newMetadataList.add(VirtualShiftUtil.shift(metaDataList.get(i), offsets[i]));
@@ -149,7 +160,7 @@ public class BAMIndexMerger {
     return mergeMetaData(newMetadataList);
   }
 
-  private BAMIndexMetaData mergeMetaData(List<BAMIndexMetaData> metaDataList) {
+  private static BAMIndexMetaData mergeMetaData(List<BAMIndexMetaData> metaDataList) {
     long firstOffset = Long.MAX_VALUE;
     long lastOffset = Long.MIN_VALUE;
     long alignedRecordCount = 0;
@@ -179,7 +190,7 @@ public class BAMIndexMerger {
     return new BAMIndexMetaData(chunkList);
   }
 
-  private LinearIndex mergeLinearIndexes(int referenceSequence, List<LinearIndex> linearIndexes, long[] offsets) {
+  private static LinearIndex mergeLinearIndexes(int referenceSequence, List<LinearIndex> linearIndexes, long[] offsets) {
     int maxIndex = -1;
     for (LinearIndex li : linearIndexes) {
       if (li.getIndexStart() != 0) {
@@ -218,25 +229,5 @@ public class BAMIndexMerger {
       }
     }
     return new LinearIndex(referenceSequence, 0, entries);
-  }
-
-  private static void dump(List<LinearIndex> linearIndexes) {
-    int max = 0;
-    for (LinearIndex li : linearIndexes) {
-      max = Math.max(max, li.size());
-    }
-    for (int i = 0; i < max; i++) {
-      System.out.print(i + "\t");
-      for (LinearIndex li : linearIndexes) {
-        long[] indexEntries = li.getIndexEntries();
-        if (i < indexEntries.length) {
-          System.out.print(indexEntries[i]);
-        } else {
-          System.out.print("-");
-        }
-        System.out.print("\t");
-      }
-      System.out.println();
-    }
   }
 }

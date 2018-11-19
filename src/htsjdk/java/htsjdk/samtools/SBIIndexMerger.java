@@ -1,10 +1,14 @@
 package htsjdk.samtools;
 
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
+import htsjdk.samtools.util.Log;
+
 import java.io.OutputStream;
 
 /** Merges SBI files for parts of a file that have been concatenated. */
 public final class SBIIndexMerger {
+
+  private static final Log log = Log.getInstance(SBIIndexMerger.class);
 
   private SBIIndexWriter indexWriter;
   private long granularity = -1;
@@ -41,7 +45,8 @@ public final class SBIIndexMerger {
     if (granularity == -1) { // first time being set
       granularity = header.getGranularity();
     } else if (granularity > 0 && granularity != header.getGranularity()) {
-      granularity = 0; // different granularities so set to "unspecified"
+      log.warn("Different granularities so setting to 0 (unspecified)");
+      granularity = 0;
     }
   }
 

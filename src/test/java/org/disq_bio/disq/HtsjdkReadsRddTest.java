@@ -442,7 +442,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
   }
 
   @Test
-  public void testNoSBIIndexWrittenWhenNotCoordinateSorted() throws Exception {
+  public void testSBIIndexWrittenWhenNotCoordinateSorted() throws Exception {
     String inputPath =
         AnySamTestUtil.writeAnySamFile(
             1000, SAMFileHeader.SortOrder.queryname, ReadsFormatWriteOption.BAM, null);
@@ -455,6 +455,6 @@ public class HtsjdkReadsRddTest extends BaseTest {
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
     htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
 
-    Assert.assertFalse(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
   }
 }
