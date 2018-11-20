@@ -68,6 +68,9 @@ public final class BAMSBIIndexer {
   /**
    * Returns the virtual file offset of the first record in a BAM file - i.e. the virtual file
    * offset after skipping over the text header and the sequence records.
+   *
+   * @param seekableStream BAM file
+   * @return the virtual file offset of the first record in the specified BAM file
    */
   public static long findVirtualOffsetOfFirstRecordInBam(final SeekableStream seekableStream) {
     try {

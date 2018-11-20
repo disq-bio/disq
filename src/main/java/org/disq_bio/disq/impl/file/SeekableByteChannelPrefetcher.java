@@ -108,11 +108,12 @@ public final class SeekableByteChannelPrefetcher implements SeekableByteChannel 
 
   /**
    * Wraps the provided SeekableByteChannel within a SeekableByteChannelPrefetcher, using the
-   * provided buffer size
+   * provided buffer size.
    *
    * @param bufferSizeMB buffer size in MB
    * @param channel channel to wrap in the prefetcher
    * @return wrapped channel
+   * @throws IOException if an I/O error occurs
    */
   public static SeekableByteChannel addPrefetcher(int bufferSizeMB, SeekableByteChannel channel)
       throws IOException {
@@ -321,11 +322,9 @@ public final class SeekableByteChannelPrefetcher implements SeekableByteChannel 
   /**
    * Reads a sequence of bytes from this channel into the given buffer.
    *
-   * <p>
-   *
    * <p>Bytes are read starting at this channel's current position, and then the position is updated
    * with the number of bytes actually read. Otherwise this method behaves exactly as specified in
-   * the {@link ReadableByteChannel} interface.
+   * the {@link SeekableByteChannel} interface.
    *
    * @param dst buffer to write into
    */
@@ -423,19 +422,15 @@ public final class SeekableByteChannelPrefetcher implements SeekableByteChannel 
   /**
    * Sets this channel's position.
    *
-   * <p>
-   *
    * <p>Setting the position to a value that is greater than the current size is legal but does not
    * change the size of the entity. A later attempt to read bytes at such a position will
    * immediately return an end-of-file indication. A later attempt to write bytes at such a position
    * will cause the entity to grow to accommodate the new bytes; the values of any bytes between the
    * previous end-of-file and the newly-written bytes are unspecified.
    *
-   * <p>
-   *
    * <p>Setting the channel's position is not recommended when connected to an entity, typically a
-   * file, that is opened with the {@link StandardOpenOption#APPEND APPEND} option. When opened for
-   * append, the position is first advanced to the end before writing.
+   * file, that is opened with the {@link java.nio.file.StandardOpenOption#APPEND APPEND} option.
+   * When opened for append, the position is first advanced to the end before writing.
    *
    * @param newPosition The new position, a non-negative integer counting the number of bytes from
    *     the beginning of the entity
@@ -483,16 +478,10 @@ public final class SeekableByteChannelPrefetcher implements SeekableByteChannel 
   /**
    * Closes this channel.
    *
-   * <p>
-   *
    * <p>After a channel is closed, any further attempt to invoke I/O operations upon it will cause a
    * {@link ClosedChannelException} to be thrown.
    *
-   * <p>
-   *
    * <p>If this channel is already closed then invoking this method has no effect.
-   *
-   * <p>
    *
    * <p>This method may be invoked at any time. If some other thread has already invoked it,
    * however, then another invocation will block until the first invocation is complete, after which

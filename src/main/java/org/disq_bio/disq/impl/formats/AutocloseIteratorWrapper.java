@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  * An {@link Iterator} that automatically closes a resource when the end of the iteration is
  * reached.
  *
- * @param <E>
+ * @param <E> element type
  */
 public class AutocloseIteratorWrapper<E> implements Iterator<E> {
 

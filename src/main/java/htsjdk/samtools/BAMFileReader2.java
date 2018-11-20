@@ -743,6 +743,8 @@ public class BAMFileReader2 extends SamReader.ReaderImplementation {
    * @param stream A BinaryCodec to read the header from
    * @param validationStringency Determines how stringent to be when validating the sam
    * @param source Note that this is used only for reporting errors.
+   * @return BAM header
+   * @throws IOException if an I/O error occurs
    */
   protected static SAMFileHeader readHeader(
       final BinaryCodec stream,
@@ -1042,6 +1044,7 @@ public class BAMFileReader2 extends SamReader.ReaderImplementation {
    * @param contained if <code>true</code>, return records that are strictly contained in the
    *     intervals, otherwise return records that overlap
    * @param filePointers file pointer pairs corresponding to chunk boundaries for the intervals
+   * @return SAM record iterator
    */
   public CloseableIterator<SAMRecord> createIndexIterator(
       final QueryInterval[] intervals, final boolean contained, final long[] filePointers) {
