@@ -3,4 +3,7 @@
     <Match>
         <Class name="org.disq_bio.disq.impl.file.SeekableByteChannelPrefetcher"/>
     </Match>
+    <Match>
+        <Class name="org.disq_bio.disq.impl.formats.vcf.StreamBasedTabixIndexCreator$StreamBasedTabixIndex"/>
+    </Match>
 </FindBugsFilter>

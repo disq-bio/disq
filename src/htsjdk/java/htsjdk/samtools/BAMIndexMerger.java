@@ -82,7 +82,7 @@ public class BAMIndexMerger {
         mergeLinearIndexes(referenceSequence, linearIndexes, offsets));
   }
 
-  private static BinningIndexContent.BinList mergeBins(List<BinningIndexContent.BinList> binLists, long[] offsets) {
+  public static BinningIndexContent.BinList mergeBins(List<BinningIndexContent.BinList> binLists, long[] offsets) {
     List<Bin> mergedBins = new ArrayList<>();
     int maxBinNumber = binLists.stream().mapToInt(bl -> bl.maxBinNumber).max().orElse(0);
     int commonNonNullBins = 0;
@@ -190,7 +190,7 @@ public class BAMIndexMerger {
     return new BAMIndexMetaData(chunkList);
   }
 
-  private static LinearIndex mergeLinearIndexes(int referenceSequence, List<LinearIndex> linearIndexes, long[] offsets) {
+  public static LinearIndex mergeLinearIndexes(int referenceSequence, List<LinearIndex> linearIndexes, long[] offsets) {
     int maxIndex = -1;
     for (LinearIndex li : linearIndexes) {
       if (li.getIndexStart() != 0) {

@@ -25,26 +25,30 @@
  */
 package org.disq_bio.disq.impl.formats.vcf;
 
-import com.google.common.collect.Iterators;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
+import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
-import htsjdk.variant.vcf.VCFEncoder;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.HiddenFileFilter;
 import org.disq_bio.disq.impl.file.Merger;
+import org.disq_bio.disq.impl.file.TbiMerger;
 import org.disq_bio.disq.impl.formats.bgzf.BGZFCodec;
+import scala.Tuple2;
 
 public class VcfSink extends AbstractVcfSink {
 
@@ -59,20 +63,26 @@ public class VcfSink extends AbstractVcfSink {
       String tempPartsDirectory)
       throws IOException {
     Broadcast<VCFHeader> vcfHeaderBroadcast = jsc.broadcast(vcfHeader);
-    JavaRDD<String> variantStrings =
-        variants.mapPartitions(
-            (FlatMapFunction<Iterator<VariantContext>, String>)
-                variantContexts -> {
-                  VCFEncoder vcfEncoder =
-                      new VCFEncoder(vcfHeaderBroadcast.getValue(), false, false);
-                  return Iterators.transform(variantContexts, vcfEncoder::encode);
-                });
     boolean compressed = path.endsWith(BGZFCodec.DEFAULT_EXTENSION) || path.endsWith(".gz");
-    if (compressed) {
-      variantStrings.saveAsTextFile(tempPartsDirectory, BGZFCodec.class);
-    } else {
-      variantStrings.saveAsTextFile(tempPartsDirectory);
-    }
+    boolean writeTbiFile = compressed;
+    variants
+        .mapPartitions(
+            readIterator -> {
+              HeaderlessVcfOutputFormat.setHeader(vcfHeaderBroadcast.getValue());
+              HeaderlessVcfOutputFormat.setBlockCompress(compressed);
+              HeaderlessVcfOutputFormat.setWriteTbiFile(writeTbiFile);
+              return readIterator;
+            })
+        .mapToPair(
+            (PairFunction<VariantContext, Void, VariantContext>)
+                variantContext -> new Tuple2<>(null, variantContext))
+        .saveAsNewAPIHadoopFile(
+            tempPartsDirectory,
+            Void.class,
+            VariantContext.class,
+            HeaderlessVcfOutputFormat.class,
+            jsc.hadoopConfiguration());
+
     String headerFile =
         tempPartsDirectory + "/header" + (compressed ? BGZFCodec.DEFAULT_EXTENSION : "");
     try (OutputStream headerOut = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
@@ -90,7 +100,28 @@ public class VcfSink extends AbstractVcfSink {
         out.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
       }
     }
+
+    List<String> vcfParts =
+        fileSystemWrapper
+            .listDirectory(jsc.hadoopConfiguration(), tempPartsDirectory)
+            .stream()
+            .filter(new HiddenFileFilter())
+            .collect(Collectors.toList());
+    List<Long> partLengths = new ArrayList<>();
+    for (String part : vcfParts) {
+      partLengths.add(fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), part));
+    }
+
     new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
+    if (writeTbiFile) {
+      new TbiMerger(fileSystemWrapper)
+          .mergeParts(
+              jsc.hadoopConfiguration(),
+              tempPartsDirectory,
+              path + TabixUtils.STANDARD_INDEX_EXTENSION,
+              partLengths);
+    }
+
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
   }
 }
