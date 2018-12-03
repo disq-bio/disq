@@ -31,6 +31,7 @@ import htsjdk.samtools.SAMTextHeaderCodec;
 import htsjdk.samtools.util.AsciiWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.disq_bio.disq.HtsjdkReadsRdd;
@@ -57,7 +58,8 @@ public class SamSink extends AbstractSamSink {
       String path,
       String referenceSourcePath,
       String tempPartsDirectory,
-      long sbiIndexGranularity)
+      long sbiIndexGranularity,
+      List<String> indexesToDisable)
       throws IOException {
 
     reads.map(SAMRecord::getSAMString).map(String::trim).saveAsTextFile(tempPartsDirectory);

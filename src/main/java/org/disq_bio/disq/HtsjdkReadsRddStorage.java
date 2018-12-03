@@ -31,6 +31,8 @@ import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.util.Locatable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
@@ -183,6 +185,7 @@ public class HtsjdkReadsRddStorage {
     ReadsFormatWriteOption formatWriteOption = null;
     FileCardinalityWriteOption fileCardinalityWriteOption = null;
     TempPartsDirectoryWriteOption tempPartsDirectoryWriteOption = null;
+    List<String> indexesToDisable = new ArrayList<>();
     for (WriteOption writeOption : writeOptions) {
       if (writeOption instanceof ReadsFormatWriteOption) {
         formatWriteOption = (ReadsFormatWriteOption) writeOption;
@@ -190,6 +193,10 @@ public class HtsjdkReadsRddStorage {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
         tempPartsDirectoryWriteOption = (TempPartsDirectoryWriteOption) writeOption;
+      } else if (writeOption instanceof BaiWriteOption && writeOption == BaiWriteOption.DISABLE) {
+        indexesToDisable.add(BaiWriteOption.getIndexExtension());
+      } else if (writeOption instanceof SbiWriteOption && writeOption == SbiWriteOption.DISABLE) {
+        indexesToDisable.add(SbiWriteOption.getIndexExtension());
       }
     }
 
@@ -222,6 +229,7 @@ public class HtsjdkReadsRddStorage {
             path,
             referenceSourcePath,
             tempPartsDirectory,
-            sbiIndexGranularity);
+            sbiIndexGranularity,
+            indexesToDisable);
   }
 }

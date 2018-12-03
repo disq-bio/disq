@@ -25,6 +25,7 @@
  */
 package org.disq_bio.disq;
 
+import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.BAMSBIIndexer;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SBIIndex;
@@ -456,5 +457,44 @@ public class HtsjdkReadsRddTest extends BaseTest {
     htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
 
     Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+  }
+
+  @Test
+  public void testDisableBAIAndSBI() throws Exception {
+    String inputPath =
+        AnySamTestUtil.writeAnySamFile(
+            1000, SAMFileHeader.SortOrder.coordinate, ReadsFormatWriteOption.BAM, null);
+
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage = HtsjdkReadsRddStorage.makeDefault(jsc);
+
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+
+    String bamExtension =
+        SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension();
+
+    // default (both enabled)
+    String outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + BAMIndex.BAMIndexSuffix))));
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+
+    // bai disabled
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, BaiWriteOption.DISABLE);
+    Assert.assertFalse(Files.exists(Paths.get(URI.create(outputPath + BAMIndex.BAMIndexSuffix))));
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+
+    // sbi disabled
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.DISABLE);
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + BAMIndex.BAMIndexSuffix))));
+    Assert.assertFalse(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+
+    // both disabled
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(
+        htsjdkReadsRdd, outputPath, BaiWriteOption.DISABLE, SbiWriteOption.DISABLE);
+    Assert.assertFalse(Files.exists(Paths.get(URI.create(outputPath + BAMIndex.BAMIndexSuffix))));
+    Assert.assertFalse(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
   }
 }

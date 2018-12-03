@@ -34,6 +34,7 @@ import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import htsjdk.samtools.cram.ref.ReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
@@ -65,7 +66,8 @@ public class CramSink extends AbstractSamSink {
       String path,
       String referenceSourcePath,
       String tempPartsDirectory,
-      long sbiIndexGranularity)
+      long sbiIndexGranularity,
+      List<String> indexesToDisable)
       throws IOException {
 
     ReferenceSource referenceSource =

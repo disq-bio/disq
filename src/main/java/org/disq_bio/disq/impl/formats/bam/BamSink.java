@@ -41,7 +41,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.disq_bio.disq.BaiWriteOption;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.SbiWriteOption;
 import org.disq_bio.disq.impl.file.BaiMerger;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
@@ -70,12 +72,15 @@ public class BamSink extends AbstractSamSink {
       String path,
       String referenceSourcePath,
       String tempPartsDirectory,
-      long sbiIndexGranularity)
+      long sbiIndexGranularity,
+      List<String> indexesToDisable)
       throws IOException {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
-    boolean writeSbiFile = true;
-    boolean writeBaiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
+    boolean writeSbiFile = !indexesToDisable.contains(SbiWriteOption.getIndexExtension());
+    boolean writeBaiFile =
+        header.getSortOrder() == SAMFileHeader.SortOrder.coordinate
+            && !indexesToDisable.contains(BaiWriteOption.getIndexExtension());
     Configuration conf = jsc.hadoopConfiguration();
     reads
         .mapPartitions(

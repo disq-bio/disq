@@ -23,24 +23,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.sam;
+package org.disq_bio.disq;
 
-import htsjdk.samtools.SAMFileHeader;
-import htsjdk.samtools.SAMRecord;
-import java.io.IOException;
-import java.util.List;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import htsjdk.samtools.SBIIndex;
 
-public abstract class AbstractSamSink {
-  public abstract void save(
-      JavaSparkContext jsc,
-      SAMFileHeader header,
-      JavaRDD<SAMRecord> reads,
-      String path,
-      String referenceSourcePath,
-      String tempPartsDirectory,
-      long sbiIndexGranularity,
-      List<String> indexesToDisable)
-      throws IOException;
+/** An option for for enabling or disabling writing SBI files. Enabled by default. */
+public enum SbiWriteOption implements WriteOption {
+  ENABLE,
+  DISABLE;
+
+  public static String getIndexExtension() {
+    return SBIIndex.FILE_EXTENSION;
+  }
 }
