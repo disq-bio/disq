@@ -23,22 +23,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.sam;
+package htsjdk.samtools;
 
-import htsjdk.samtools.SAMFileHeader;
-import htsjdk.samtools.SAMRecord;
-import java.io.IOException;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import java.util.List;
 
-public abstract class AbstractSamSink {
-  public abstract void save(
-      JavaSparkContext jsc,
-      SAMFileHeader header,
-      JavaRDD<SAMRecord> reads,
-      String path,
-      String referenceSourcePath,
-      String tempPartsDirectory,
-      long sbiIndexGranularity)
-      throws IOException;
+public class BaiTestUtils {
+  public static void dump(List<LinearIndex> linearIndexes) {
+    int max = 0;
+    for (LinearIndex li : linearIndexes) {
+      max = Math.max(max, li.size());
+    }
+    for (int i = 0; i < max; i++) {
+      System.out.print(i + "\t");
+      for (LinearIndex li : linearIndexes) {
+        long[] indexEntries = li.getIndexEntries();
+        if (i < indexEntries.length) {
+          System.out.print(indexEntries[i]);
+        } else {
+          System.out.print("-");
+        }
+        System.out.print("\t");
+      }
+      System.out.println();
+    }
+  }
 }

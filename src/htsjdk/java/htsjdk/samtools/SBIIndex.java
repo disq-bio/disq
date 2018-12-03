@@ -76,6 +76,22 @@ public final class SBIIndex implements Serializable {
       result = 31 * result + Arrays.hashCode(uuid);
       return result;
     }
+
+    @Override
+    public String toString() {
+      return "Header{"
+          + "fileLength="
+          + fileLength
+          + ", md5="
+          + Arrays.toString(md5)
+          + ", uuid="
+          + Arrays.toString(uuid)
+          + ", totalNumberOfRecords="
+          + totalNumberOfRecords
+          + ", granularity="
+          + granularity
+          + '}';
+    }
   }
 
   public static final String FILE_EXTENSION = ".sbi";
@@ -165,6 +181,15 @@ public final class SBIIndex implements Serializable {
     long totalNumberOfRecords = binaryCodec.readLong();
     long granularity = binaryCodec.readLong();
     return new Header(fileLength, md5, uuid, totalNumberOfRecords, granularity);
+  }
+
+  /**
+   * Returns the index header.
+   *
+   * @return the header
+   */
+  public Header getHeader() {
+    return header;
   }
 
   /**
@@ -297,9 +322,20 @@ public final class SBIIndex implements Serializable {
 
   @Override
   public String toString() {
+    String virtualOffsetsString;
     if (virtualOffsets.length > 30) {
-      return Arrays.toString(Arrays.copyOfRange(virtualOffsets, 0, 30)).replace("]", ", ...]");
+      virtualOffsetsString =
+          Arrays.toString(Arrays.copyOfRange(virtualOffsets, 0, 30)).replace("]", ", ...]");
+    } else {
+      virtualOffsetsString = Arrays.toString(virtualOffsets);
     }
-    return Arrays.toString(virtualOffsets);
+    return "SBIIndex{"
+        + "header="
+        + header
+        + ", numVirtualOffsets="
+        + virtualOffsets.length
+        + ", virtualOffsets="
+        + virtualOffsetsString
+        + '}';
   }
 }

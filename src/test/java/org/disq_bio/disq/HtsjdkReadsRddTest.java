@@ -25,9 +25,15 @@
  */
 package org.disq_bio.disq;
 
+import htsjdk.samtools.BAMSBIIndexer;
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SBIIndex;
+import htsjdk.samtools.seekablestream.SeekablePathStream;
+import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.Locatable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -153,6 +159,47 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
   }
 
+  private Object[] parametersForTestWriteSBIIndex() {
+    return new Object[][] {
+      {"1.bam", 128 * 1024, false},
+      {"1.bam", 128 * 1024, true},
+    };
+  }
+
+  @Test
+  @Parameters
+  public void testWriteSBIIndex(String inputFile, int splitSize, boolean useNio) throws Exception {
+    String inputPath = getPath(inputFile);
+
+    // use a granularity of 1 for the index so we index every read - allows us to compare indexes
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage =
+        HtsjdkReadsRddStorage.makeDefault(jsc)
+            .splitSize(splitSize)
+            .useNio(useNio)
+            .sbiIndexGranularity(1);
+
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+
+    String outputPath =
+        createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+
+    Path sbiFile = Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION));
+    Assert.assertTrue(Files.exists(sbiFile));
+    SBIIndex actualSbiIndex = SBIIndex.load(sbiFile);
+
+    ByteArrayOutputStream expectedSbiContents = new ByteArrayOutputStream();
+    try (SeekableStream in = new SeekablePathStream(Paths.get(URI.create(outputPath)))) {
+      BAMSBIIndexer.createIndex(in, expectedSbiContents, 1);
+    }
+    SBIIndex expectedSbiIndex =
+        SBIIndex.load(new ByteArrayInputStream(expectedSbiContents.toByteArray()));
+
+    Assert.assertEquals(expectedSbiIndex.getHeader(), actualSbiIndex.getHeader());
+    Assert.assertArrayEquals(
+        expectedSbiIndex.getVirtualOffsets(), actualSbiIndex.getVirtualOffsets());
+  }
+
   private Object[] parametersForTestReadAndWriteMultiple() {
     return new Object[][] {
       {null, false, ReadsFormatWriteOption.BAM},
@@ -200,6 +247,9 @@ public class HtsjdkReadsRddTest extends BaseTest {
       totalCount += AnySamTestUtil.countReads(part, refPath);
     }
     Assert.assertEquals(expectedCount, totalCount);
+
+    // for multiple file, check there are no sbi files
+    Assert.assertTrue(listSBIIndexFiles(outputPath).isEmpty());
 
     if (SamtoolsTestUtil.isSamtoolsAvailable()) {
       int totalCountSamtools = 0;
@@ -389,5 +439,22 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertTrue(Files.exists(p));
     htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
     Assert.assertEquals(expectedCount, AnySamTestUtil.countReads(outputPath));
+  }
+
+  @Test
+  public void testSBIIndexWrittenWhenNotCoordinateSorted() throws Exception {
+    String inputPath =
+        AnySamTestUtil.writeAnySamFile(
+            1000, SAMFileHeader.SortOrder.queryname, ReadsFormatWriteOption.BAM, null);
+
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage = HtsjdkReadsRddStorage.makeDefault(jsc);
+
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+
+    String outputPath =
+        createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
   }
 }

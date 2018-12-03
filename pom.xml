@@ -139,6 +139,25 @@
                 <version>3.0.0-M1</version>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/htsjdk/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <!-- If this fails the build, type 'mvn fmt:format' from the command line to reformat code. -->
                 <groupId>com.coveo</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
@@ -166,9 +185,6 @@
                         <include>**/src/main/java/**</include>
                         <include>**/src/test/java/**</include>
                     </includes>
-                    <excludes>
-                        <exclude>**/htsjdk/samtools/**/*</exclude>
-                    </excludes>
                     <mapping>
                         <!-- Don't use the default javadoc comments, since fmt-maven-plugin will try to reformat -->
                         <java>SLASHSTAR_STYLE</java>
@@ -187,9 +203,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.1</version>
-                <configuration>
-                    <excludes>htsjdk/samtools/**/*</excludes>
-                </configuration>
                 <executions>
                     <execution>
                         <id>jacoco-initialize</id>

@@ -26,19 +26,28 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.BAMFileWriter;
+import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.file.BaiMerger;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.HiddenFileFilter;
 import org.disq_bio.disq.impl.file.Merger;
+import org.disq_bio.disq.impl.file.SbiMerger;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import scala.Tuple2;
 
@@ -60,36 +69,62 @@ public class BamSink extends AbstractSamSink {
       JavaRDD<SAMRecord> reads,
       String path,
       String referenceSourcePath,
-      String tempPartsDirectory)
+      String tempPartsDirectory,
+      long sbiIndexGranularity)
       throws IOException {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
+    boolean writeSbiFile = true;
+    boolean writeBaiFile = header.getSortOrder() == SAMFileHeader.SortOrder.coordinate;
+    Configuration conf = jsc.hadoopConfiguration();
     reads
         .mapPartitions(
             readIterator -> {
               HeaderlessBamOutputFormat.setHeader(headerBroadcast.getValue());
+              HeaderlessBamOutputFormat.setWriteSbiFile(writeSbiFile);
+              HeaderlessBamOutputFormat.setWriteBaiFile(writeBaiFile);
+              HeaderlessBamOutputFormat.setSbiIndexGranularity(sbiIndexGranularity);
               return readIterator;
             })
         .mapToPair(
             (PairFunction<SAMRecord, Void, SAMRecord>) samRecord -> new Tuple2<>(null, samRecord))
         .saveAsNewAPIHadoopFile(
-            tempPartsDirectory,
-            Void.class,
-            SAMRecord.class,
-            HeaderlessBamOutputFormat.class,
-            jsc.hadoopConfiguration());
+            tempPartsDirectory, Void.class, SAMRecord.class, HeaderlessBamOutputFormat.class, conf);
 
     String headerFile = tempPartsDirectory + "/header";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, headerFile)) {
       BAMFileWriter.writeHeader(out, header);
     }
+    long headerLength = fileSystemWrapper.getFileLength(conf, headerFile);
 
     String terminatorFile = tempPartsDirectory + "/terminator";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), terminatorFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, terminatorFile)) {
       out.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
     }
 
-    new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
-    fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
+    List<String> bamParts =
+        fileSystemWrapper
+            .listDirectory(conf, tempPartsDirectory)
+            .stream()
+            .filter(new HiddenFileFilter())
+            .collect(Collectors.toList());
+    List<Long> partLengths = new ArrayList<>();
+    for (String part : bamParts) {
+      partLengths.add(fileSystemWrapper.getFileLength(conf, part));
+    }
+
+    new Merger().mergeParts(conf, tempPartsDirectory, path);
+    long fileLength = fileSystemWrapper.getFileLength(conf, path);
+    if (writeSbiFile) {
+      new SbiMerger(fileSystemWrapper)
+          .mergeParts(
+              conf, tempPartsDirectory, path + SBIIndex.FILE_EXTENSION, headerLength, fileLength);
+    }
+    if (writeBaiFile) {
+      new BaiMerger(fileSystemWrapper)
+          .mergeParts(
+              conf, tempPartsDirectory, path + BAMIndex.BAMIndexSuffix, header, partLengths);
+    }
+    fileSystemWrapper.delete(conf, tempPartsDirectory);
   }
 }

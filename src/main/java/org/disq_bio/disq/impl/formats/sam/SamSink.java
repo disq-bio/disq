@@ -56,7 +56,8 @@ public class SamSink extends AbstractSamSink {
       JavaRDD<SAMRecord> reads,
       String path,
       String referenceSourcePath,
-      String tempPartsDirectory)
+      String tempPartsDirectory,
+      long sbiIndexGranularity)
       throws IOException {
 
     reads.map(SAMRecord::getSAMString).map(String::trim).saveAsTextFile(tempPartsDirectory);

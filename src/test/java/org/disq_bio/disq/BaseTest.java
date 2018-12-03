@@ -25,6 +25,7 @@
  */
 package org.disq_bio.disq;
 
+import htsjdk.samtools.SBIIndex;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -81,6 +82,14 @@ public abstract class BaseTest {
   protected List<String> listPartFiles(String dir) {
     return Arrays.stream(
             new File(URI.create(dir)).listFiles(file -> file.getName().startsWith("part-")))
+        .map(f -> f.toURI().toString())
+        .collect(Collectors.toList());
+  }
+
+  protected List<String> listSBIIndexFiles(String dir) {
+    return Arrays.stream(
+            new File(URI.create(dir))
+                .listFiles(file -> file.getName().endsWith(SBIIndex.FILE_EXTENSION)))
         .map(f -> f.toURI().toString())
         .collect(Collectors.toList());
   }
