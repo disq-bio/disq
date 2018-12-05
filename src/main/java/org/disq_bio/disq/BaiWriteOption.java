@@ -32,6 +32,17 @@ public enum BaiWriteOption implements WriteOption {
   ENABLE,
   DISABLE;
 
+  /**
+   * Turn a boolean into a {@link BaiWriteOption}.
+   *
+   * @param writeBai if writing BAI files is enabled
+   * @return a {@link BaiWriteOption}
+   */
+  public static BaiWriteOption fromBoolean(boolean writeBai) {
+    return writeBai ? ENABLE : DISABLE;
+  }
+
+  /** @return the extension for BAI files. */
   public static String getIndexExtension() {
     return BAMIndex.BAMIndexSuffix;
   }

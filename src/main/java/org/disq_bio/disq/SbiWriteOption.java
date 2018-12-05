@@ -32,6 +32,17 @@ public enum SbiWriteOption implements WriteOption {
   ENABLE,
   DISABLE;
 
+  /**
+   * Turn a boolean into a {@link SbiWriteOption}.
+   *
+   * @param writeSbi if writing SBI files is enabled
+   * @return a {@link SbiWriteOption}
+   */
+  public static SbiWriteOption fromBoolean(boolean writeSbi) {
+    return writeSbi ? ENABLE : DISABLE;
+  }
+
+  /** @return the extension for SBI files. */
   public static String getIndexExtension() {
     return SBIIndex.FILE_EXTENSION;
   }
