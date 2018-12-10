@@ -67,7 +67,7 @@ public class CramSink extends AbstractSamSink {
       String referenceSourcePath,
       String tempPartsDirectory,
       long sbiIndexGranularity,
-      List<String> indexesToDisable)
+      List<String> indexesToEnable)
       throws IOException {
 
     ReferenceSource referenceSource =

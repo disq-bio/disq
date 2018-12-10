@@ -59,7 +59,7 @@ public class SamSink extends AbstractSamSink {
       String referenceSourcePath,
       String tempPartsDirectory,
       long sbiIndexGranularity,
-      List<String> indexesToDisable)
+      List<String> indexesToEnable)
       throws IOException {
 
     reads.map(SAMRecord::getSAMString).map(String::trim).saveAsTextFile(tempPartsDirectory);

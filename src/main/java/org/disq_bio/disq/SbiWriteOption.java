@@ -27,7 +27,7 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.SBIIndex;
 
-/** An option for for enabling or disabling writing SBI files. Enabled by default. */
+/** An option for for enabling or disabling writing SBI files. Disabled by default. */
 public enum SbiWriteOption implements WriteOption {
   ENABLE,
   DISABLE;

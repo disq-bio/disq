@@ -185,7 +185,7 @@ public class HtsjdkReadsRddStorage {
     ReadsFormatWriteOption formatWriteOption = null;
     FileCardinalityWriteOption fileCardinalityWriteOption = null;
     TempPartsDirectoryWriteOption tempPartsDirectoryWriteOption = null;
-    List<String> indexesToDisable = new ArrayList<>();
+    List<String> indexesToEnable = new ArrayList<>();
     for (WriteOption writeOption : writeOptions) {
       if (writeOption instanceof ReadsFormatWriteOption) {
         formatWriteOption = (ReadsFormatWriteOption) writeOption;
@@ -193,10 +193,10 @@ public class HtsjdkReadsRddStorage {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
         tempPartsDirectoryWriteOption = (TempPartsDirectoryWriteOption) writeOption;
-      } else if (writeOption instanceof BaiWriteOption && writeOption == BaiWriteOption.DISABLE) {
-        indexesToDisable.add(BaiWriteOption.getIndexExtension());
-      } else if (writeOption instanceof SbiWriteOption && writeOption == SbiWriteOption.DISABLE) {
-        indexesToDisable.add(SbiWriteOption.getIndexExtension());
+      } else if (writeOption instanceof BaiWriteOption && writeOption == BaiWriteOption.ENABLE) {
+        indexesToEnable.add(BaiWriteOption.getIndexExtension());
+      } else if (writeOption instanceof SbiWriteOption && writeOption == SbiWriteOption.ENABLE) {
+        indexesToEnable.add(SbiWriteOption.getIndexExtension());
       }
     }
 
@@ -230,6 +230,6 @@ public class HtsjdkReadsRddStorage {
             referenceSourcePath,
             tempPartsDirectory,
             sbiIndexGranularity,
-            indexesToDisable);
+            indexesToEnable);
   }
 }

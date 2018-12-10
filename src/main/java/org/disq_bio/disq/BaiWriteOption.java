@@ -27,7 +27,7 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.BAMIndex;
 
-/** An option for for enabling or disabling writing BAI files. Enabled by default. */
+/** An option for for enabling or disabling writing BAI files. Disabled by default. */
 public enum BaiWriteOption implements WriteOption {
   ENABLE,
   DISABLE;

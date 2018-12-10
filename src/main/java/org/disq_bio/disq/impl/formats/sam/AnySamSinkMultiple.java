@@ -71,7 +71,7 @@ public class AnySamSinkMultiple extends AbstractSamSink implements Serializable 
       String referenceSourcePath,
       String tempPartsDirectory,
       long sbiIndexGranularity,
-      List<String> indexesToDisable)
+      List<String> indexesToEnable)
       throws IOException {
 
     FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();

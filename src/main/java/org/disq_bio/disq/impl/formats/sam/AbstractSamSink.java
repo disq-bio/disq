@@ -41,6 +41,6 @@ public abstract class AbstractSamSink {
       String referenceSourcePath,
       String tempPartsDirectory,
       long sbiIndexGranularity,
-      List<String> indexesToDisable)
+      List<String> indexesToEnable)
       throws IOException;
 }
