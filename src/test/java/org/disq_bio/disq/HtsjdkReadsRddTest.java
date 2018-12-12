@@ -182,7 +182,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     String outputPath =
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
-    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.ENABLE);
 
     Path sbiFile = Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION));
     Assert.assertTrue(Files.exists(sbiFile));
@@ -453,8 +453,55 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     String outputPath =
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
-    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.ENABLE);
 
     Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+  }
+
+  @Test
+  public void testEnableBAIAndSBI() throws Exception {
+    String inputPath =
+        AnySamTestUtil.writeAnySamFile(
+            1000, SAMFileHeader.SortOrder.coordinate, ReadsFormatWriteOption.BAM, null);
+
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage = HtsjdkReadsRddStorage.makeDefault(jsc);
+
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+
+    String bamExtension =
+        SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension();
+
+    // default (both disabled)
+    String outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+    Assert.assertFalse(
+        Files.exists(Paths.get(URI.create(outputPath + BaiWriteOption.getIndexExtension()))));
+    Assert.assertFalse(
+        Files.exists(Paths.get(URI.create(outputPath + SbiWriteOption.getIndexExtension()))));
+
+    // bai only
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, BaiWriteOption.ENABLE);
+    Assert.assertTrue(
+        Files.exists(Paths.get(URI.create(outputPath + BaiWriteOption.getIndexExtension()))));
+    Assert.assertFalse(
+        Files.exists(Paths.get(URI.create(outputPath + SbiWriteOption.getIndexExtension()))));
+
+    // sbi only
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.ENABLE);
+    Assert.assertFalse(
+        Files.exists(Paths.get(URI.create(outputPath + BaiWriteOption.getIndexExtension()))));
+    Assert.assertTrue(
+        Files.exists(Paths.get(URI.create(outputPath + SbiWriteOption.getIndexExtension()))));
+
+    // both bai and sbi
+    outputPath = createTempPath(bamExtension);
+    htsjdkReadsRddStorage.write(
+        htsjdkReadsRdd, outputPath, BaiWriteOption.ENABLE, SbiWriteOption.ENABLE);
+    Assert.assertTrue(
+        Files.exists(Paths.get(URI.create(outputPath + BaiWriteOption.getIndexExtension()))));
+    Assert.assertTrue(
+        Files.exists(Paths.get(URI.create(outputPath + SbiWriteOption.getIndexExtension()))));
   }
 }

@@ -23,24 +23,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.sam;
+package org.disq_bio.disq;
 
-import htsjdk.samtools.SAMFileHeader;
-import htsjdk.samtools.SAMRecord;
-import java.io.IOException;
-import java.util.List;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import htsjdk.samtools.BAMIndex;
 
-public abstract class AbstractSamSink {
-  public abstract void save(
-      JavaSparkContext jsc,
-      SAMFileHeader header,
-      JavaRDD<SAMRecord> reads,
-      String path,
-      String referenceSourcePath,
-      String tempPartsDirectory,
-      long sbiIndexGranularity,
-      List<String> indexesToEnable)
-      throws IOException;
+/** An option for for enabling or disabling writing BAI files. Disabled by default. */
+public enum BaiWriteOption implements WriteOption {
+  ENABLE,
+  DISABLE;
+
+  /**
+   * Turn a boolean into a {@link BaiWriteOption}.
+   *
+   * @param writeBai if writing BAI files is enabled
+   * @return a {@link BaiWriteOption}
+   */
+  public static BaiWriteOption fromBoolean(boolean writeBai) {
+    return writeBai ? ENABLE : DISABLE;
+  }
+
+  /** @return the extension for BAI files. */
+  public static String getIndexExtension() {
+    return BAMIndex.BAMIndexSuffix;
+  }
 }

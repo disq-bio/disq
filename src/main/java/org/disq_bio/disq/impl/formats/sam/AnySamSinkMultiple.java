@@ -31,6 +31,7 @@ import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import htsjdk.samtools.cram.ref.ReferenceSource;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
@@ -69,7 +70,8 @@ public class AnySamSinkMultiple extends AbstractSamSink implements Serializable 
       String path,
       String referenceSourcePath,
       String tempPartsDirectory,
-      long sbiIndexGranularity)
+      long sbiIndexGranularity,
+      List<String> indexesToEnable)
       throws IOException {
 
     FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();

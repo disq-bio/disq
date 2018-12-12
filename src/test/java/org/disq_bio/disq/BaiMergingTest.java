@@ -96,7 +96,7 @@ public class BaiMergingTest extends BaseTest {
 
     String outputPath =
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
-    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath);
+    htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, BaiWriteOption.ENABLE);
 
     File outputBam = new File(URI.create(outputPath));
     File outputBai = new File(outputBam.getParent(), outputBam.getName() + ".bai");
