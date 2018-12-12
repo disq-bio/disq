@@ -29,6 +29,7 @@ import htsjdk.samtools.util.Locatable;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -110,6 +111,7 @@ public class HtsjdkVariantsRddStorage {
     VariantsFormatWriteOption formatWriteOption = null;
     FileCardinalityWriteOption fileCardinalityWriteOption = null;
     TempPartsDirectoryWriteOption tempPartsDirectoryWriteOption = null;
+    List<String> indexesToEnable = new ArrayList<>();
     for (WriteOption writeOption : writeOptions) {
       if (writeOption instanceof VariantsFormatWriteOption) {
         formatWriteOption = (VariantsFormatWriteOption) writeOption;
@@ -117,6 +119,9 @@ public class HtsjdkVariantsRddStorage {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
         tempPartsDirectoryWriteOption = (TempPartsDirectoryWriteOption) writeOption;
+      } else if (writeOption instanceof TabixWriteOption
+          && writeOption == TabixWriteOption.ENABLE) {
+        indexesToEnable.add(TabixWriteOption.getIndexExtension());
       }
     }
 
@@ -147,6 +152,7 @@ public class HtsjdkVariantsRddStorage {
             htsjdkVariantsRdd.getHeader(),
             htsjdkVariantsRdd.getVariants(),
             path,
-            tempPartsDirectory);
+            tempPartsDirectory,
+            indexesToEnable);
   }
 }

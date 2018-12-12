@@ -42,6 +42,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.disq_bio.disq.TabixWriteOption;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.HiddenFileFilter;
@@ -60,11 +61,13 @@ public class VcfSink extends AbstractVcfSink {
       VCFHeader vcfHeader,
       JavaRDD<VariantContext> variants,
       String path,
-      String tempPartsDirectory)
+      String tempPartsDirectory,
+      List<String> indexesToEnable)
       throws IOException {
     Broadcast<VCFHeader> vcfHeaderBroadcast = jsc.broadcast(vcfHeader);
     boolean compressed = path.endsWith(BGZFCodec.DEFAULT_EXTENSION) || path.endsWith(".gz");
-    boolean writeTbiFile = compressed;
+    boolean writeTbiFile =
+        compressed && indexesToEnable.contains(TabixWriteOption.getIndexExtension());
     variants
         .mapPartitions(
             readIterator -> {
