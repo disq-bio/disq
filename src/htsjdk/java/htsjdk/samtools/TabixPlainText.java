@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
+/**
+ * Produces readable text versions of tabix files for debugging.
+ */
 public class TabixPlainText {
 
   public static void main(String[] args) throws IOException {
@@ -32,10 +35,9 @@ public class TabixPlainText {
     }
   }
 
-  public static void writeReference(PrintWriter pw, final BinningIndexContent content) {
+  private static void writeReference(PrintWriter pw, final BinningIndexContent content) {
 
     final int reference = content.getReferenceSequence();
-
 
     final BAMIndexContent.BinList bins = content.getBins();
     final int size = bins == null ? 0 : content.getNumberOfNonNullBins();
@@ -45,8 +47,6 @@ public class TabixPlainText {
       pw.println("Reference " + reference + " has n_intv=0");
       return;
     }
-
-//    pw.println("Reference " + reference + " has n_bin= " + Integer.toString(size + (metaData != null? 1 : 0)));
 
     // chunks
     for (final Bin bin : bins) {   // note, bins will always be sorted

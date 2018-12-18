@@ -119,9 +119,9 @@ public class HtsjdkVariantsRddStorage {
         fileCardinalityWriteOption = (FileCardinalityWriteOption) writeOption;
       } else if (writeOption instanceof TempPartsDirectoryWriteOption) {
         tempPartsDirectoryWriteOption = (TempPartsDirectoryWriteOption) writeOption;
-      } else if (writeOption instanceof TabixWriteOption
-          && writeOption == TabixWriteOption.ENABLE) {
-        indexesToEnable.add(TabixWriteOption.getIndexExtension());
+      } else if (writeOption instanceof TabixIndexWriteOption
+          && writeOption == TabixIndexWriteOption.ENABLE) {
+        indexesToEnable.add(TabixIndexWriteOption.getIndexExtension());
       }
     }
 

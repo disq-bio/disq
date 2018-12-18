@@ -80,7 +80,7 @@ public class TbiMergingTest extends BaseTest {
     String outputPath =
         createTempPath(
             VcfFormat.fromFormatWriteOption(VariantsFormatWriteOption.VCF_BGZ).getExtension());
-    htsjdkVariantsRddStorage.write(htsjdkVariantsRdd, outputPath, TabixWriteOption.ENABLE);
+    htsjdkVariantsRddStorage.write(htsjdkVariantsRdd, outputPath, TabixIndexWriteOption.ENABLE);
 
     File outputVcf = new File(URI.create(outputPath));
     File outputTbi =

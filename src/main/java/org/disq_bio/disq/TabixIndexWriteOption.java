@@ -28,17 +28,17 @@ package org.disq_bio.disq;
 import htsjdk.tribble.util.TabixUtils;
 
 /** An option for for enabling or disabling writing tabix files. Disabled by default. */
-public enum TabixWriteOption implements WriteOption {
+public enum TabixIndexWriteOption implements WriteOption {
   ENABLE,
   DISABLE;
 
   /**
-   * Turn a boolean into a {@link TabixWriteOption}.
+   * Turn a boolean into a {@link TabixIndexWriteOption}.
    *
    * @param writeTabix if writing tabix files is enabled
-   * @return a {@link TabixWriteOption}
+   * @return a {@link TabixIndexWriteOption}
    */
-  public static TabixWriteOption fromBoolean(boolean writeTabix) {
+  public static TabixIndexWriteOption fromBoolean(boolean writeTabix) {
     return writeTabix ? ENABLE : DISABLE;
   }
 

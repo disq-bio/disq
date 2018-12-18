@@ -18,6 +18,13 @@ import java.util.List;
 
 /** Merges tabix files for parts of a file that have been concatenated. */
 public class TabixIndexMerger {
+
+  /**
+   * Merge tabix files for (headerless) file parts.
+   * @param partLengths the lengths, in bytes, of the headerless file parts
+   * @param tbiStreams streams for the tabix files to merge
+   * @param tbiOut the output stream for the resulting merged tabix file
+   */
   public static void merge(
       List<Long> partLengths,
       List<SeekableStream> tbiStreams,
@@ -62,17 +69,32 @@ public class TabixIndexMerger {
     }
   }
 
+  /**
+   * Get the binning indexes for a tabix index. This method is needed since
+   * {@link TabixIndex} doesn't provide access.
+   * @param tbi the tabix index
+   * @return the array of binning indexes
+   */
   public static BinningIndexContent[] getBinningIndexContents(TabixIndex tbi) {
     // TODO: change htsjdk to allow access
     try {
       Field indices = TabixIndex.class.getDeclaredField("indices");
       indices.setAccessible(true);
-      return ((BinningIndexContent[]) indices.get(tbi));
+      BinningIndexContent[] contents = (BinningIndexContent[]) indices.get(tbi);
+      // create a defensive copy, (shallow, but OK since objects are immutable)
+      return Arrays.copyOf(contents, contents.length);
     } catch (IllegalAccessException | NoSuchFieldException e) {
       throw new RuntimeException(e);
     }
   }
 
+  /**
+   * Get the binning index for a reference sequence for a tabix index. This
+   * method is needed since {@link TabixIndex} doesn't provide access.
+   * @param tbi the tabix index
+   * @param ref the reference sequence
+   * @return the binning index
+   */
   public static BinningIndexContent getBinningIndexContent(TabixIndex tbi, int ref) {
     return getBinningIndexContents(tbi)[ref];
   }

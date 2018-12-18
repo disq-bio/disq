@@ -38,7 +38,6 @@ import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.BinaryCodec;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
@@ -47,6 +46,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.formats.bgzf.TerminatorlessBlockCompressedOutputStream;
 
 /**
  * An output format for writing {@link SAMRecord} objects to BAM files that don't have a header (or
@@ -82,7 +82,7 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
       this.conf = conf;
       this.file = file;
       this.out = file.getFileSystem(conf).create(file);
-      this.compressedOut = new BlockCompressedOutputStream(out, (File) null);
+      this.compressedOut = new TerminatorlessBlockCompressedOutputStream(out, null);
       this.binaryCodec = new BinaryCodec(compressedOut);
       this.bamRecordCodec = new BAMRecordCodec(header);
       bamRecordCodec.setOutputStream(compressedOut);
@@ -120,10 +120,7 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
 
     @Override
     public void close(TaskAttemptContext taskAttemptContext) throws IOException {
-      // don't close BlockCompressedOutputStream since we don't want to write the
-      // terminator - just flush to write out the final BGZF block
-      binaryCodec.getOutputStream().flush();
-      out.close();
+      binaryCodec.close();
 
       long finalVirtualOffset = compressedOut.getFilePointer();
 

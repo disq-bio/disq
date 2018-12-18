@@ -59,6 +59,10 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
     VcfRecordWriter(
         Configuration conf, Path file, VCFHeader header, boolean blockCompress, Path tbiFile)
         throws IOException {
+      if (!blockCompress && tbiFile != null) {
+        throw new IllegalArgumentException(
+            "Cannot create tabix index for file that is not block compressed.");
+      }
       OutputStream out = file.getFileSystem(conf).create(file);
       TabixIndexCreator tabixIndexCreator;
       if (tbiFile == null) {
@@ -73,7 +77,8 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
           VCFWriterHelper.buildVCFWriter(
               blockCompress ? new TerminatorlessBlockCompressedOutputStream(out, (File) null) : out,
               header.getSequenceDictionary(),
-              tabixIndexCreator);
+              tabixIndexCreator,
+              tbiFile != null);
       variantContextWriter.setHeader(header);
     }
 

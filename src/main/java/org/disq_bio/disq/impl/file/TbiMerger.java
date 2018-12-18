@@ -57,14 +57,13 @@ public class TbiMerger {
       throw new IllegalArgumentException(
           "Cannot merge different number of VCF and TBI files in " + tempPartsDirectory);
     }
+    List<SeekableStream> tbiStreams = new ArrayList<>();
     try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      List<SeekableStream> tbiStreams = new ArrayList<>();
       for (String tbiPart : tbiParts) {
         tbiStreams.add(fileSystemWrapper.open(conf, tbiPart));
       }
       TabixIndexMerger.merge(partLengths, tbiStreams, out);
-
-      // TODO: close all properly - consider reading into memory
+    } finally {
       for (SeekableStream stream : tbiStreams) {
         stream.close();
       }
