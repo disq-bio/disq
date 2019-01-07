@@ -30,7 +30,6 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.cram.build.CramIO;
 import htsjdk.samtools.cram.common.CramVersions;
-import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import htsjdk.samtools.cram.ref.ReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -70,15 +69,17 @@ public class CramSink extends AbstractSamSink {
       List<String> indexesToEnable)
       throws IOException {
 
-    ReferenceSource referenceSource =
-        new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
-    Broadcast<CRAMReferenceSource> referenceSourceBroadCast = jsc.broadcast(referenceSource);
     reads
         .mapPartitions(
             readIterator -> {
               CramOutputFormat.setHeader(headerBroadcast.getValue());
-              CramOutputFormat.setReferenceSource(referenceSourceBroadCast.getValue());
+
+              // Don't broadcast the reference source since it is not always serializable,
+              // even using Kryo (e.g. for GCS)
+              ReferenceSource referenceSource =
+                  new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
+              CramOutputFormat.setReferenceSource(referenceSource);
               return readIterator;
             })
         .mapToPair(
@@ -92,6 +93,8 @@ public class CramSink extends AbstractSamSink {
 
     String headerFile = tempPartsDirectory + "/header";
     try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
+      ReferenceSource referenceSource =
+          new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
       writeHeader(header, out, headerFile, referenceSource);
     }
 

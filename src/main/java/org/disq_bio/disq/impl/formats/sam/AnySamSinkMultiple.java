@@ -27,7 +27,6 @@ package org.disq_bio.disq.impl.formats.sam;
 
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import htsjdk.samtools.cram.ref.ReferenceSource;
 import java.io.IOException;
 import java.io.Serializable;
@@ -80,18 +79,20 @@ public class AnySamSinkMultiple extends AbstractSamSink implements Serializable 
       fileSystemWrapper.delete(jsc.hadoopConfiguration(), path);
     }
 
-    ReferenceSource referenceSource =
-        referenceSourcePath == null
-            ? null
-            : new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
-    Broadcast<CRAMReferenceSource> referenceSourceBroadCast = jsc.broadcast(referenceSource);
     reads
         .mapPartitions(
             readIterator -> {
               AnySamOutputFormat.setHeader(headerBroadcast.getValue());
               AnySamOutputFormat.setSamFormat(samFormat);
-              AnySamOutputFormat.setReferenceSource(referenceSourceBroadCast.getValue());
+
+              // Don't broadcast the reference source since it is not always serializable,
+              // even using Kryo (e.g. for GCS)
+              ReferenceSource referenceSource =
+                  referenceSourcePath == null
+                      ? null
+                      : new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
+              AnySamOutputFormat.setReferenceSource(referenceSource);
               return readIterator;
             })
         .mapToPair(
