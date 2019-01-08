@@ -92,7 +92,7 @@ public class BaiEqualityChecker {
     Assert.assertEquals("Max bin number", bins1.maxBinNumber, bins2.maxBinNumber);
     Assert.assertEquals(
         "Number of non-null bins", bins1.getNumberOfNonNullBins(), bins2.getNumberOfNonNullBins());
-    for (int i = 0; i < bins1.maxBinNumber; i++) {
+    for (int i = 0; i <= bins1.maxBinNumber; i++) {
       assertEquals(bins1.getBin(i), bins2.getBin(i));
     }
   }

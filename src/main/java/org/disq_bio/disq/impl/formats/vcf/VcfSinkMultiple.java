@@ -28,6 +28,7 @@ package org.disq_bio.disq.impl.formats.vcf;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.Serializable;
+import java.util.List;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
@@ -48,7 +49,8 @@ public class VcfSinkMultiple extends AbstractVcfSink implements Serializable {
       VCFHeader vcfHeader,
       JavaRDD<VariantContext> variants,
       String path,
-      String tempPartsDirectory) {
+      String tempPartsDirectory,
+      List<String> indexesToEnable) {
     Broadcast<VCFHeader> headerBroadcast = jsc.broadcast(vcfHeader);
     variants
         .mapPartitions(

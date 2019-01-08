@@ -23,22 +23,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.vcf;
+package org.disq_bio.disq.impl.formats.bgzf;
 
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.samtools.util.BlockCompressedOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import java.io.OutputStream;
 
-public abstract class AbstractVcfSink {
-  public abstract void save(
-      JavaSparkContext jsc,
-      VCFHeader vcfHeader,
-      JavaRDD<VariantContext> variants,
-      String path,
-      String tempPartsDirectory,
-      List<String> indexesToEnable)
-      throws IOException;
+/**
+ * An extension of {@link BlockCompressedOutputStream} that doesn't write an empty BGZF block at the
+ * end of the stream.
+ */
+public class TerminatorlessBlockCompressedOutputStream extends BlockCompressedOutputStream {
+  private final OutputStream out;
+
+  public TerminatorlessBlockCompressedOutputStream(OutputStream os, File file) {
+    super(os, file);
+    this.out = os;
+  }
+
+  @Override
+  public void close() throws IOException {
+    super.flush();
+    out.close();
+  }
 }

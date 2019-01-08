@@ -23,22 +23,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.vcf;
+package org.disq_bio.disq;
 
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFHeader;
-import java.io.IOException;
-import java.util.List;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
+import htsjdk.tribble.util.TabixUtils;
 
-public abstract class AbstractVcfSink {
-  public abstract void save(
-      JavaSparkContext jsc,
-      VCFHeader vcfHeader,
-      JavaRDD<VariantContext> variants,
-      String path,
-      String tempPartsDirectory,
-      List<String> indexesToEnable)
-      throws IOException;
+/** An option for for enabling or disabling writing tabix files. Disabled by default. */
+public enum TabixIndexWriteOption implements WriteOption {
+  ENABLE,
+  DISABLE;
+
+  /**
+   * Turn a boolean into a {@link TabixIndexWriteOption}.
+   *
+   * @param writeTabix if writing tabix files is enabled
+   * @return a {@link TabixIndexWriteOption}
+   */
+  public static TabixIndexWriteOption fromBoolean(boolean writeTabix) {
+    return writeTabix ? ENABLE : DISABLE;
+  }
+
+  /** @return the extension for tabix files. */
+  public static String getIndexExtension() {
+    return TabixUtils.STANDARD_INDEX_EXTENSION;
+  }
 }

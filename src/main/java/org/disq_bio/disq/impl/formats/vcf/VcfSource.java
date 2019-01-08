@@ -35,7 +35,6 @@ import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.readers.AsciiLineReader;
 import htsjdk.tribble.readers.AsciiLineReaderIterator;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
@@ -62,6 +61,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.disq_bio.disq.TabixIndexWriteOption;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.bgzf.BGZFCodec;
@@ -177,7 +177,7 @@ public class VcfSource implements Serializable {
       String indexPath;
       VcfFormat vcfFormat = VcfFormat.fromPath(path);
       if (vcfFormat == null) {
-        indexPath = path + TabixUtils.STANDARD_INDEX_EXTENSION; // try tabix
+        indexPath = path + TabixIndexWriteOption.getIndexExtension(); // try tabix
       } else {
         indexPath = path + vcfFormat.getIndexExtension();
       }
@@ -206,7 +206,7 @@ public class VcfSource implements Serializable {
       throws IOException {
     if (indexPath.endsWith(".gz")) {
       return new GZIPInputStream(inputStreamInitial);
-    } else if (indexPath.endsWith(TabixUtils.STANDARD_INDEX_EXTENSION)) {
+    } else if (indexPath.endsWith(TabixIndexWriteOption.getIndexExtension())) {
       return new BlockCompressedInputStream(inputStreamInitial);
     } else {
       return inputStreamInitial;
