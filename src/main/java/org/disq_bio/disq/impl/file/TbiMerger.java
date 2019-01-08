@@ -27,13 +27,13 @@ package org.disq_bio.disq.impl.file;
 
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.tribble.index.tabix.TabixIndexMerger;
-import htsjdk.tribble.util.TabixUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
+import org.disq_bio.disq.TabixIndexWriteOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class TbiMerger {
   private List<String> getTbiParts(List<String> parts) {
     return parts
         .stream()
-        .filter(f -> f.endsWith(TabixUtils.STANDARD_INDEX_EXTENSION))
+        .filter(f -> f.endsWith(TabixIndexWriteOption.getIndexExtension()))
         .collect(Collectors.toList());
   }
 }

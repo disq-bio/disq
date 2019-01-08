@@ -27,7 +27,6 @@ package org.disq_bio.disq.impl.formats.vcf;
 
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndexCreator;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VCFWriterHelper;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -41,6 +40,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.disq_bio.disq.HtsjdkVariantsRdd;
+import org.disq_bio.disq.TabixIndexWriteOption;
 import org.disq_bio.disq.impl.formats.bgzf.TerminatorlessBlockCompressedOutputStream;
 
 /**
@@ -117,7 +117,8 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
     if (writeTbiFile) {
       // ensure tbi files are hidden so they don't interfere with merging of part files
       tbiFile =
-          new Path(file.getParent(), "." + file.getName() + TabixUtils.STANDARD_INDEX_EXTENSION);
+          new Path(
+              file.getParent(), "." + file.getName() + TabixIndexWriteOption.getIndexExtension());
     } else {
       tbiFile = null;
     }

@@ -27,7 +27,6 @@ package org.disq_bio.disq.impl.formats.vcf;
 
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
@@ -121,7 +120,7 @@ public class VcfSink extends AbstractVcfSink {
           .mergeParts(
               jsc.hadoopConfiguration(),
               tempPartsDirectory,
-              path + TabixUtils.STANDARD_INDEX_EXTENSION,
+              path + TabixIndexWriteOption.getIndexExtension(),
               partLengths);
     }
 
