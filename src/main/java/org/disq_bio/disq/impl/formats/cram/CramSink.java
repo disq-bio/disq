@@ -30,7 +30,7 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.cram.build.CramIO;
 import htsjdk.samtools.cram.common.CramVersions;
-import htsjdk.samtools.cram.ref.ReferenceSource;
+import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
@@ -42,7 +42,6 @@ import org.disq_bio.disq.HtsjdkReadsRdd;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.Merger;
-import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import scala.Tuple2;
 
@@ -74,12 +73,7 @@ public class CramSink extends AbstractSamSink {
         .mapPartitions(
             readIterator -> {
               CramOutputFormat.setHeader(headerBroadcast.getValue());
-
-              // Don't broadcast the reference source since it is not always serializable,
-              // even using Kryo (e.g. for GCS)
-              ReferenceSource referenceSource =
-                  new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
-              CramOutputFormat.setReferenceSource(referenceSource);
+              CramOutputFormat.setReferenceSourcePath(referenceSourcePath);
               return readIterator;
             })
         .mapToPair(
@@ -93,8 +87,9 @@ public class CramSink extends AbstractSamSink {
 
     String headerFile = tempPartsDirectory + "/header";
     try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
-      ReferenceSource referenceSource =
-          new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
+      CRAMReferenceSource referenceSource =
+          CramReferenceSourceBuilder.build(
+              fileSystemWrapper, jsc.hadoopConfiguration(), referenceSourcePath);
       writeHeader(header, out, headerFile, referenceSource);
     }
 
@@ -108,7 +103,10 @@ public class CramSink extends AbstractSamSink {
   }
 
   private void writeHeader(
-      SAMFileHeader header, OutputStream out, String headerFile, ReferenceSource referenceSource) {
+      SAMFileHeader header,
+      OutputStream out,
+      String headerFile,
+      CRAMReferenceSource referenceSource) {
     CRAMContainerStreamWriter cramWriter =
         new CRAMContainerStreamWriter(out, null, referenceSource, header, headerFile);
     cramWriter.writeHeader(header);
