@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2018 Disq contributors
+ * Copyright (c) 2018-2019 Disq contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
