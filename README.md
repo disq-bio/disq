@@ -31,8 +31,10 @@ below for details on each feature.
 | Sharded output                  | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            |
 | Indexes - read heuristic        | :white_check_mark:            | :white_check_mark:            | NA                            | NA                            |
 | Indexes - read .bai/.crai       | :x:                           | :white_check_mark:            | NA                            | NA                            |
+| Indexes - write .bai/.crai      | :white_check_mark:            | :x:                           | NA                            | NA                            |
 | Indexes - read .sbi             | :white_check_mark:            | NA                            | NA                            | NA                            |
-| Indexes - write .sbi            | :x:                           | NA                            | NA                            | NA                            |
+| Indexes - write .sbi            | :white_check_mark:            | NA                            | NA                            | NA                            |
+| Indexes - write .tbi            | NA                            | NA                            | NA                            | :white_check_mark:            |
 | Intervals                       | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            |
 | Ordering guarantees             | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            |
 | Queryname sorted guarantees     | :x:                           | NA                            | :x:                           | NA                            |
@@ -78,7 +80,7 @@ For reading VCF, support includes
 [BGZF](https://samtools.github.io/hts-specs/SAMv1.pdf)-compressed (`.vcf.bgz` or `.vcf.gz`) and
 gzip-compressed files (`.vcf.gz`).
 
-For writing VCF, only BGZF-compressed files can be written (gzip
+For writing (compressed) VCF, only BGZF-compressed files can be written (gzip
 is not splittable so it is a mistake to write this format).
 
 ### Multiple input files
@@ -121,15 +123,18 @@ splits. A regular `.bai` index file may optionally be used to find splits, altho
 protect against regions with very high coverage (oversampling) since it specifies genomic
 regions, not file regions.
 
-For writing BAM, it is possible to write `.sbi` indexes at the same time as writing the
-BAM file.
+For writing BAM, `.bai` and`.sbi` indexes may optionally be created at the same time as writing the
+BAM file. Indexes are not created by default, and have to be explicitly enabled.
 
 For reading CRAM, if there is a `.crai` index then it is used to find record boundaries. Otherwise, the whole CRAM
 file is efficiently scanned to read container headers so that record boundaries can be found.
 
 SAM files and VCF files are split using the usual Hadoop file splitting implementation for finding text records.
 
-Writing `.bai`, `.crai`, and `.tabix` indexes is not possible at present. These can be generated using existing
+For writing BGZF-compressed VCF, a tabix (`.tbi`) index may optionally be created at the same time as writing
+the VCF file. Indexes are not written by default, and have to be explicitly enabled.
+
+Writing `.crai` indexes is not possible at present. These can be generated using existing
 tools, such as htsjdk/GATK/ADAM.
 
 ### Intervals
@@ -201,7 +206,6 @@ e.g. `HtsjdkReadsRddStorage`. In the future it will be possible to have alternat
 
 As a general rule, any code that does not have a Spark or Hadoop dependency, or does not have a "distributed" flavor
 belongs in htsjdk. This rule may be broken during a transition period while the code is being moved to htsjdk.
-See [here](https://github.com/samtools/htsjdk/issues/1112) for some of the proposed htsjdk changes.
 
 ## Interoperability tests
 
@@ -232,11 +236,14 @@ The following tests all the [GATK 'large' files](https://github.com/broadinstitu
 (BAM, CRAM, VCF) that have been copied to the local filesystem beforehand:
 
 ```
+GATK_HOME=...
+SAMTOOLS_HOME=...
+BCFTOOLS_HOME=...
 mvn verify \
-    -Ddisq.test.real.world.files.dir=/home/gatk/src/test/resources/large \
-    -Ddisq.test.real.world.files.ref=/home/gatk/src/test/resources/large/human_g1k_v37.20.21.fasta \
-    -Ddisq.samtools.bin=/path/to/bin/samtools \
-    -Ddisq.bcftools.bin=/path/to/bin/bcftools
+    -Ddisq.test.real.world.files.dir=$GATK_HOME/src/test/resources/large \
+    -Ddisq.test.real.world.files.ref=$GATK_HOME/src/test/resources/large/human_g1k_v37.20.21.fasta \
+    -Ddisq.samtools.bin=$SAMTOOLS_HOME/bin/samtools \
+    -Ddisq.bcftools.bin=$BCFTOOLS_HOME/bin/bcftools
 ```
 
 ## Performing a release
