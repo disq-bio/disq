@@ -58,6 +58,8 @@ public class HtsjdkReadsRddTest extends BaseTest {
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, true},
+      {"valid.cram", "valid.fasta.gz", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
+      {"valid.cram", "valid.fasta.gz", ReadsFormatWriteOption.CRAM, 128 * 1024, true},
       {"valid_no_index.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
       {"test.sam", null, ReadsFormatWriteOption.SAM, 128 * 1024, false},
       {

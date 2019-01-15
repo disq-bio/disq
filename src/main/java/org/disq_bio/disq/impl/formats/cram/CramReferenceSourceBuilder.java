@@ -27,25 +27,45 @@ package org.disq_bio.disq.impl.formats.cram;
 
 import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import htsjdk.samtools.cram.ref.ReferenceSource;
+import htsjdk.samtools.reference.BlockCompressedIndexedFastaSequenceFile;
 import htsjdk.samtools.reference.FastaSequenceIndex;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.util.GZIIndex;
+import htsjdk.samtools.util.IOUtil;
 import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 
 /** A utility class for creating a {@link CRAMReferenceSource}. */
 public class CramReferenceSourceBuilder {
+  private static final String FASTA_INDEX_EXTENSION = ".fai";
+
   public static CRAMReferenceSource build(
       FileSystemWrapper fileSystemWrapper, Configuration conf, String referenceSourcePath)
       throws IOException {
     SeekableStream refIn = fileSystemWrapper.open(conf, referenceSourcePath);
-    try (SeekableStream indexIn = fileSystemWrapper.open(conf, referenceSourcePath + ".fai")) {
-      FastaSequenceIndex index = new FastaSequenceIndex(indexIn);
-      ReferenceSequenceFile refSeqFile =
-          ReferenceSequenceFileFactory.getReferenceSequenceFile(referenceSourcePath, refIn, index);
-      return new ReferenceSource(refSeqFile);
+    String indexPath = referenceSourcePath + FASTA_INDEX_EXTENSION;
+    ReferenceSequenceFile refSeqFile;
+    if (IOUtil.hasBlockCompressedExtension(referenceSourcePath)) {
+      String gziIndexPath = referenceSourcePath + GZIIndex.DEFAULT_EXTENSION;
+      try (SeekableStream indexIn = fileSystemWrapper.open(conf, indexPath);
+          SeekableStream gziIndexIn = fileSystemWrapper.open(conf, gziIndexPath)) {
+        FastaSequenceIndex index = new FastaSequenceIndex(indexIn);
+        GZIIndex gziIndex = GZIIndex.loadIndex(gziIndexPath, gziIndexIn);
+        refSeqFile =
+            new BlockCompressedIndexedFastaSequenceFile(
+                referenceSourcePath, refIn, index, null, gziIndex);
+      }
+    } else {
+      try (SeekableStream indexIn = fileSystemWrapper.open(conf, indexPath)) {
+        FastaSequenceIndex index = new FastaSequenceIndex(indexIn);
+        refSeqFile =
+            ReferenceSequenceFileFactory.getReferenceSequenceFile(
+                referenceSourcePath, refIn, index);
+      }
     }
+    return new ReferenceSource(refSeqFile);
   }
 }
