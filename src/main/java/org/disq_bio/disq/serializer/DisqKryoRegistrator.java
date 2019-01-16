@@ -134,6 +134,7 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     kryo.register(htsjdk.variant.vcf.VCFHeaderLineCount.class);
     kryo.register(htsjdk.variant.vcf.VCFHeaderLineType.class);
     kryo.register(htsjdk.variant.vcf.VCFInfoHeaderLine.class);
+    kryo.register(htsjdk.variant.vcf.VCFSimpleHeaderLine.class);
 
     // java.io
     kryo.register(java.io.FileDescriptor.class);
