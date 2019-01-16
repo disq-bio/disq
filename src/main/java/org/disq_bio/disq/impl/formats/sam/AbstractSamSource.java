@@ -26,10 +26,6 @@
 package org.disq_bio.disq.impl.formats.sam;
 
 import htsjdk.samtools.*;
-import htsjdk.samtools.cram.ref.ReferenceSource;
-import htsjdk.samtools.reference.FastaSequenceIndex;
-import htsjdk.samtools.reference.ReferenceSequenceFile;
-import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.Locatable;
 import java.io.IOException;
@@ -43,6 +39,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.disq_bio.disq.HtsjdkReadsTraversalParameters;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
+import org.disq_bio.disq.impl.formats.cram.CramReferenceSourceBuilder;
 
 public abstract class AbstractSamSource implements Serializable {
 
@@ -96,14 +93,8 @@ public abstract class AbstractSamSource implements Serializable {
       readerFactory.validationStringency(stringency);
     }
     if (referenceSourcePath != null) {
-      SeekableStream refIn = fileSystemWrapper.open(conf, referenceSourcePath);
-      try (SeekableStream indexIn = fileSystemWrapper.open(conf, referenceSourcePath + ".fai")) {
-        FastaSequenceIndex index = new FastaSequenceIndex(indexIn);
-        ReferenceSequenceFile refSeqFile =
-            ReferenceSequenceFileFactory.getReferenceSequenceFile(
-                referenceSourcePath, refIn, index);
-        readerFactory.referenceSource(new ReferenceSource(refSeqFile));
-      }
+      readerFactory.referenceSource(
+          CramReferenceSourceBuilder.build(fileSystemWrapper, conf, referenceSourcePath));
     }
     SamInputResource resource = SamInputResource.of(in);
     if (indexStream != null) {

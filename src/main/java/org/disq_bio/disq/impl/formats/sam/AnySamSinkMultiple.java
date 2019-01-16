@@ -27,8 +27,6 @@ package org.disq_bio.disq.impl.formats.sam;
 
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.cram.ref.CRAMReferenceSource;
-import htsjdk.samtools.cram.ref.ReferenceSource;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -39,7 +37,6 @@ import org.apache.spark.broadcast.Broadcast;
 import org.disq_bio.disq.HtsjdkReadsRdd;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
-import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.cram.CramSink;
 import scala.Tuple2;
 
@@ -80,18 +77,13 @@ public class AnySamSinkMultiple extends AbstractSamSink implements Serializable 
       fileSystemWrapper.delete(jsc.hadoopConfiguration(), path);
     }
 
-    ReferenceSource referenceSource =
-        referenceSourcePath == null
-            ? null
-            : new ReferenceSource(NioFileSystemWrapper.asPath(referenceSourcePath));
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
-    Broadcast<CRAMReferenceSource> referenceSourceBroadCast = jsc.broadcast(referenceSource);
     reads
         .mapPartitions(
             readIterator -> {
               AnySamOutputFormat.setHeader(headerBroadcast.getValue());
               AnySamOutputFormat.setSamFormat(samFormat);
-              AnySamOutputFormat.setReferenceSource(referenceSourceBroadCast.getValue());
+              AnySamOutputFormat.setReferenceSourcePath(referenceSourcePath);
               return readIterator;
             })
         .mapToPair(

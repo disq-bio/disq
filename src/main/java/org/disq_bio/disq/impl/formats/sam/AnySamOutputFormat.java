@@ -39,6 +39,9 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.file.FileSystemWrapper;
+import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.formats.cram.CramReferenceSourceBuilder;
 
 /**
  * An output format for writing {@link SAMRecord} objects to BAM/CRAM/SAM files (including header
@@ -57,7 +60,7 @@ public class AnySamOutputFormat extends FileOutputFormat<Void, SAMRecord> {
         Path file,
         SAMFileHeader header,
         SamFormat samFormat,
-        CRAMReferenceSource refSource)
+        String referenceSourcePath)
         throws IOException {
       OutputStream out = file.getFileSystem(conf).create(file);
       SAMFileWriterFactory writerFactory = new SAMFileWriterFactory().setUseAsyncIo(false);
@@ -66,7 +69,10 @@ public class AnySamOutputFormat extends FileOutputFormat<Void, SAMRecord> {
           samFileWriter = writerFactory.makeBAMWriter(header, true, out);
           break;
         case CRAM:
-          samFileWriter = new CRAMFileWriter(out, refSource, header, null);
+          FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();
+          CRAMReferenceSource referenceSource =
+              CramReferenceSourceBuilder.build(fileSystemWrapper, conf, referenceSourcePath);
+          samFileWriter = new CRAMFileWriter(out, referenceSource, header, null);
           break;
         case SAM:
           samFileWriter = writerFactory.makeSAMWriter(header, true, out);
@@ -89,7 +95,7 @@ public class AnySamOutputFormat extends FileOutputFormat<Void, SAMRecord> {
 
   private static SAMFileHeader header;
   private static SamFormat samFormat;
-  private static CRAMReferenceSource refSource;
+  private static String referenceSourcePath;
 
   public static void setHeader(SAMFileHeader samFileHeader) {
     AnySamOutputFormat.header = samFileHeader;
@@ -99,8 +105,8 @@ public class AnySamOutputFormat extends FileOutputFormat<Void, SAMRecord> {
     AnySamOutputFormat.samFormat = samFormat;
   }
 
-  public static void setReferenceSource(CRAMReferenceSource referenceSource) {
-    AnySamOutputFormat.refSource = referenceSource;
+  public static void setReferenceSourcePath(String referenceSourcePath) {
+    AnySamOutputFormat.referenceSourcePath = referenceSourcePath;
   }
 
   @Override
@@ -108,6 +114,6 @@ public class AnySamOutputFormat extends FileOutputFormat<Void, SAMRecord> {
       throws IOException {
     Path file = getDefaultWorkFile(taskAttemptContext, samFormat.getExtension());
     return new AnySamRecordWriter(
-        taskAttemptContext.getConfiguration(), file, header, samFormat, refSource);
+        taskAttemptContext.getConfiguration(), file, header, samFormat, referenceSourcePath);
   }
 }

@@ -37,6 +37,8 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.file.FileSystemWrapper;
+import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 
 /**
  * An output format for writing {@link SAMRecord} objects to CRAM files. Should not be used
@@ -47,21 +49,22 @@ import org.disq_bio.disq.HtsjdkReadsRdd;
 public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
 
   private static SAMFileHeader header;
-  private static CRAMReferenceSource refSource;
+  private static String referenceSourcePath;
 
   public static void setHeader(SAMFileHeader samFileHeader) {
     header = samFileHeader;
   }
 
-  public static void setReferenceSource(CRAMReferenceSource referenceSource) {
-    refSource = referenceSource;
+  public static void setReferenceSourcePath(String referenceSourcePath) {
+    CramOutputFormat.referenceSourcePath = referenceSourcePath;
   }
 
   @Override
   public RecordWriter<Void, SAMRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
       throws IOException {
     Path file = getDefaultWorkFile(taskAttemptContext, "");
-    return new CramRecordWriter(taskAttemptContext.getConfiguration(), file, header, refSource);
+    return new CramRecordWriter(
+        taskAttemptContext.getConfiguration(), file, header, referenceSourcePath);
   }
 
   static class CramRecordWriter extends RecordWriter<Void, SAMRecord> {
@@ -70,10 +73,14 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
     private final CRAMContainerStreamWriter cramWriter;
 
     public CramRecordWriter(
-        Configuration conf, Path file, SAMFileHeader header, CRAMReferenceSource refSource)
+        Configuration conf, Path file, SAMFileHeader header, String referenceSourcePath)
         throws IOException {
       this.out = file.getFileSystem(conf).create(file);
-      cramWriter = new CRAMContainerStreamWriter(out, null, refSource, header, file.toString());
+      FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();
+      CRAMReferenceSource referenceSource =
+          CramReferenceSourceBuilder.build(fileSystemWrapper, conf, referenceSourcePath);
+      cramWriter =
+          new CRAMContainerStreamWriter(out, null, referenceSource, header, file.toString());
     }
 
     @Override
