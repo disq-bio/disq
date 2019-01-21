@@ -26,6 +26,7 @@
 package org.disq_bio.disq.impl.formats.vcf;
 
 import htsjdk.tribble.index.IndexCreator;
+import htsjdk.tribble.index.tabix.StreamBasedTabixIndexCreator;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.Options;
