@@ -79,7 +79,7 @@ public class StreamBasedTabixIndexCreator extends AllRefsTabixIndexCreator {
     return new StreamBasedTabixIndex(
         tabixIndex.getFormatSpec(),
         tabixIndex.getSequenceNames(),
-        TabixIndexMerger.getBinningIndexContents(tabixIndex),
+        tabixIndex.getIndices(),
         out);
   }
 }
