@@ -6,7 +6,7 @@ jdk:
 env:
   - NO_GCE_CHECK=true
 script:
-  - mvn -B test -Ddisq.samtools.bin=/usr/samtools-1.9/bin -Ddisq.bcftools.bin=/usr/bcftools-1.3/bin
+  - mvn -B test -Ddisq.samtools.bin=/usr/bin/samtools -Ddisq.bcftools.bin=/usr/bin/bcftools
 cache:
   directories:
     - $HOME/.m2
