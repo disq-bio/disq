@@ -37,7 +37,7 @@
         <mockito.version>2.22.0</mockito.version>
         <kryo-serializers.version>0.42</kryo-serializers.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <spark.version>2.3.2</spark.version>
+        <spark.version>2.4.0</spark.version>
     </properties>
 
     <dependencies>
@@ -93,7 +93,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
+            <artifactId>spark-core_2.12</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
             <exclusions>
