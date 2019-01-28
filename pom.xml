@@ -30,15 +30,17 @@
     </developers>
 
     <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <java.release>8</java.release>
+        <java.version>1.8</java.version>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
         <htsjdk.version>2.19.0</htsjdk.version>
         <hadoop.version>2.7.5</hadoop.version>
         <mockito.version>2.22.0</mockito.version>
         <kryo-serializers.version>0.42</kryo-serializers.version>
         <slf4j.version>1.7.25</slf4j.version>
         <scala.version>2.11</scala.version>
-        <spark.version>2.3.2</spark.version>
+        <spark.version>2.4.3</spark.version>
     </properties>
 
     <dependencies>
@@ -161,6 +163,11 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -338,6 +345,24 @@
     </distributionManagement>
 
     <profiles>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>11</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.0</version>
+                        <configuration>
+                            <release>${java.release}</release>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>release</id>
             <build>
