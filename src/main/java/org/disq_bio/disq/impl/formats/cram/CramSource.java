@@ -153,7 +153,7 @@ public class CramSource extends AbstractBinarySamSource implements Serializable 
       NavigableSet<Long> containerOffsets = new TreeSet<>();
       CRAIIndex index = CRAMCRAIIndexer.readIndex(in);
       for (CRAIEntry entry : index.getCRAIEntries()) {
-        containerOffsets.add(entry.containerStartOffset);
+        containerOffsets.add(entry.getContainerStartByteOffset());
       }
       containerOffsets.add(cramFileLength);
       return containerOffsets;
