@@ -119,6 +119,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
     FileSystem fileSystem = tmp.getFileSystem(conf);
     fileSystem.create(tmp).close(); // target must already exist for concat
     try {
+      logger.info("Concatenating {} parts to {}", parts.size(), path);
       concat(parts, tmp, fileSystem);
       Path target = new Path(path);
       if (fileSystem.exists(target)) { // delete target if it exists
@@ -137,6 +138,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
       }
       fileSystem.delete(tmp, false);
     }
+    logger.info("Concatenating to {} done", path);
   }
 
   static void concat(List<String> parts, Path outputPath, FileSystem filesystem)
