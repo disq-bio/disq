@@ -33,7 +33,6 @@ import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
@@ -107,18 +106,20 @@ public class BamSink extends AbstractSamSink {
       out.write(BlockCompressedStreamConstants.EMPTY_GZIP_BLOCK);
     }
 
-    List<String> bamParts =
+    List<FileSystemWrapper.FileStatus> bamParts =
         fileSystemWrapper
-            .listDirectory(conf, tempPartsDirectory)
+            .listDirectoryStatus(conf, tempPartsDirectory)
             .stream()
-            .filter(new HiddenFileFilter())
+            .filter(fs -> new HiddenFileFilter().test(fs.getPath()))
             .collect(Collectors.toList());
-    List<Long> partLengths = new ArrayList<>();
-    for (String part : bamParts) {
-      partLengths.add(fileSystemWrapper.getFileLength(conf, part));
-    }
+    List<Long> partLengths =
+        bamParts
+            .stream()
+            .mapToLong(FileSystemWrapper.FileStatus::getLength)
+            .boxed()
+            .collect(Collectors.toList());
 
-    new Merger().mergeParts(conf, tempPartsDirectory, path);
+    new Merger(fileSystemWrapper).mergeParts(conf, bamParts, path);
     long fileLength = fileSystemWrapper.getFileLength(conf, path);
     if (writeSbiFile) {
       new SbiMerger(fileSystemWrapper)

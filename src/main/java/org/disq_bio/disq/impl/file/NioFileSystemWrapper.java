@@ -100,6 +100,11 @@ public class NioFileSystemWrapper implements FileSystemWrapper {
   }
 
   @Override
+  public List<FileStatus> listDirectoryStatus(Configuration conf, String path) throws IOException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void concat(Configuration conf, List<String> parts, String path) throws IOException {
     try (OutputStream out = create(conf, path)) {
       for (final String part : parts) {

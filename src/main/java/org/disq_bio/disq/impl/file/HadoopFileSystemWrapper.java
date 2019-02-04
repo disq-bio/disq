@@ -113,6 +113,16 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   }
 
   @Override
+  public List<FileStatus> listDirectoryStatus(Configuration conf, String path) throws IOException {
+    Path p = new Path(path);
+    FileSystem fileSystem = p.getFileSystem(conf);
+    return Arrays.stream(fileSystem.listStatus(p))
+        .map(fs -> new FileStatus(fs.getPath().toUri().toString(), fs.getLen()))
+        .sorted()
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public void concat(Configuration conf, List<String> parts, String path) throws IOException {
     // target must be in same directory as parts being concat'ed
     Path tmp = new Path(new Path(parts.get(0)).getParent(), "output");

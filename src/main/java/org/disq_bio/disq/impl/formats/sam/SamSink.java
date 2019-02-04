@@ -69,7 +69,7 @@ public class SamSink extends AbstractSamSink {
         new AsciiWriter(fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile))) {
       new SAMTextHeaderCodec().encode(out, header);
     }
-    new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
+    new Merger(fileSystemWrapper).mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
   }
 }

@@ -98,7 +98,7 @@ public class CramSink extends AbstractSamSink {
       CramIO.issueEOF(CramVersions.DEFAULT_CRAM_VERSION, out);
     }
 
-    new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
+    new Merger(fileSystemWrapper).mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
   }
 
