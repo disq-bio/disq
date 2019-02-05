@@ -28,11 +28,16 @@ package org.disq_bio.disq.serializer;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
 import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import org.apache.spark.serializer.KryoRegistrator;
+import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,6 +165,41 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     // org.disq_bio.disq
     kryo.register(org.disq_bio.disq.HtsjdkReadsTraversalParameters.class);
 
+    // org.disq_bio.disq.impl.file
+    kryo.register(
+        HadoopFileSystemWrapper.class,
+        new Serializer<HadoopFileSystemWrapper>() {
+          @Override
+          public void write(
+              final Kryo kryo,
+              final Output output,
+              final HadoopFileSystemWrapper fileSystemWrapper) {
+            // empty
+          }
+
+          @Override
+          public HadoopFileSystemWrapper read(
+              final Kryo kryo, final Input input, final Class<HadoopFileSystemWrapper> type) {
+            return new HadoopFileSystemWrapper();
+          }
+        });
+
+    kryo.register(
+        NioFileSystemWrapper.class,
+        new Serializer<NioFileSystemWrapper>() {
+          @Override
+          public void write(
+              final Kryo kryo, final Output output, final NioFileSystemWrapper fileSystemWrapper) {
+            // empty
+          }
+
+          @Override
+          public NioFileSystemWrapper read(
+              final Kryo kryo, final Input input, final Class<NioFileSystemWrapper> type) {
+            return new NioFileSystemWrapper();
+          }
+        });
+
     // org.disq_bio.disq.impl.formats.bam
     kryo.register(
         org.disq_bio.disq.impl.formats.bam.BamRecordGuesserChecker.RecordStartResult.class);
@@ -172,24 +212,6 @@ public class DisqKryoRegistrator implements KryoRegistrator {
 
     // scala.collection.mutable
     kryo.register(scala.collection.mutable.WrappedArray.ofRef.class);
-
-    // sun.nio.ch
-    registerByName(kryo, "sun.nio.ch.FileChannelImpl");
-    registerByName(kryo, "sun.nio.ch.FileDispatcherImpl");
-    registerByName(kryo, "sun.nio.ch.NativeThreadSet");
-
-    // sun.nio.fs
-    registerByName(kryo, "sun.nio.fs.BsdFileSystem");
-    registerByName(kryo, "sun.nio.fs.BsdFileSystemProvider");
-    registerByName(kryo, "sun.nio.fs.LinuxFileSystem");
-    registerByName(kryo, "sun.nio.fs.LinuxFileSystemProvider");
-    registerByName(kryo, "sun.nio.fs.MacOSXFileSystem");
-    registerByName(kryo, "sun.nio.fs.MacOSXFileSystemProvider");
-    registerByName(kryo, "sun.nio.fs.SolarisFileSystem");
-    registerByName(kryo, "sun.nio.fs.SolarisFileSystemProvider");
-    registerByName(kryo, "sun.nio.fs.UnixFileSystem");
-    registerByName(kryo, "sun.nio.fs.UnixFileSystemProvider");
-    registerByName(kryo, "sun.nio.fs.UnixPath");
   }
 
   void registerByName(final Kryo kryo, final String className) {
