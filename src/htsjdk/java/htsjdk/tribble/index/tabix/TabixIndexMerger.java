@@ -8,6 +8,7 @@ import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.util.LittleEndianOutputStream;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,7 +18,63 @@ import java.util.Arrays;
 import java.util.List;
 
 /** Merges tabix files for parts of a file that have been concatenated. */
-public class TabixIndexMerger {
+public class TabixIndexMerger implements Closeable {
+
+  private final OutputStream out;
+  private final List<Long> partLengths;
+  private TabixFormat formatSpec;
+  private List<String> sequenceNames;
+  private List<List<BinningIndexContent>> content;
+
+  public TabixIndexMerger(final OutputStream out, final long headerLength) {
+    this.out = out;
+    this.partLengths = new ArrayList<>();
+    this.partLengths.add(headerLength);
+  }
+
+  public void processIndex(TabixIndex index, long partLength) {
+    this.partLengths.add(partLength);
+    if (content == null) {
+      content = new ArrayList<>();
+      formatSpec = index.getFormatSpec();
+      sequenceNames = index.getSequenceNames();
+      for (int ref = 0; ref < sequenceNames.size(); ref++) {
+        content.add(new ArrayList<>());
+      }
+    }
+    if (!index.getFormatSpec().equals(formatSpec)) {
+      throw new IllegalArgumentException(
+          String.format("Cannot merge tabix files with different formats, %s and %s.", index.getFormatSpec(), formatSpec));
+    }
+    if (!index.getSequenceNames().equals(sequenceNames)) {
+      throw new IllegalArgumentException(
+          String.format("Cannot merge tabix files with different sequence names, %s and %s.", index.getSequenceNames(), sequenceNames));
+    }
+    for (int ref = 0; ref < sequenceNames.size(); ref++) {
+      List<BinningIndexContent> binningIndexContentList = content.get(ref);
+      binningIndexContentList.add(getBinningIndexContent(index, ref));
+    }
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (content == null) {
+      throw new IllegalArgumentException("Cannot merge zero tabix files");
+    }
+    long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
+    Arrays.parallelPrefix(offsets, (a, b) -> a + b); // cumulative offsets
+
+    List<BinningIndexContent> mergedBinningIndexContentList = new ArrayList<>();
+    for (int ref = 0; ref < sequenceNames.size(); ref++) {
+      List<BinningIndexContent> binningIndexContentList = content.get(ref);
+      BinningIndexContent binningIndexContent = mergeBinningIndexContent(ref, binningIndexContentList, offsets);
+      mergedBinningIndexContentList.add(binningIndexContent);
+    }
+    TabixIndex tabixIndex = new TabixIndex(formatSpec, sequenceNames, mergedBinningIndexContentList.toArray(new BinningIndexContent[0]));
+    try (LittleEndianOutputStream los = new LittleEndianOutputStream(new BlockCompressedOutputStream(out, (File) null))) {
+      tabixIndex.write(los);
+    }
+  }
 
   /**
    * Merge tabix files for (headerless) file parts.
@@ -29,43 +86,19 @@ public class TabixIndexMerger {
       List<Long> partLengths,
       List<SeekableStream> tbiStreams,
       OutputStream tbiOut) throws IOException {
-    if (tbiStreams.isEmpty()) {
+    if (partLengths.size() - 2 != tbiStreams.size()) { // don't count header and terminator
+      throw new IllegalArgumentException(
+          String.format("Cannot merge tabix files with different number of part lengths to tabix files, %s and %s.", partLengths.size(), tbiStreams.size()));
+    }
+    if (partLengths.size() < 2) {
       throw new IllegalArgumentException("Cannot merge zero tabix files");
     }
-    List<TabixIndex> tbis = new ArrayList<>();
-    for (SeekableStream tbiStream : tbiStreams) {
-      tbis.add(new TabixIndex(new BlockCompressedInputStream(tbiStream)));
-    }
-
-    TabixFormat formatSpec = tbis.get(0).getFormatSpec();
-    List<String> sequenceNames = tbis.get(0).getSequenceNames();
-    for (TabixIndex tbi : tbis) {
-      if (!tbi.getFormatSpec().equals(formatSpec)) {
-        throw new IllegalArgumentException(
-            String.format("Cannot merge tabix files with different formats, %s and %s.", tbi.getFormatSpec(), formatSpec));
+    int i = 0;
+    try (TabixIndexMerger tabixIndexMerger = new TabixIndexMerger(tbiOut, partLengths.get(i++))) {
+      for (SeekableStream tbiStream : tbiStreams) {
+        TabixIndex index = new TabixIndex(new BlockCompressedInputStream(tbiStream));
+        tabixIndexMerger.processIndex(index, partLengths.get(i++));
       }
-      if (!tbi.getSequenceNames().equals(sequenceNames)) {
-        throw new IllegalArgumentException(
-            String.format("Cannot merge tabix files with different sequence names, %s and %s.", tbi.getSequenceNames(), sequenceNames));
-      }
-    }
-
-    long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
-    Arrays.parallelPrefix(offsets, (a, b) -> a + b); // cumulative offsets
-
-    List<BinningIndexContent> mergedBinningIndexContentList = new ArrayList<>();
-    for (int ref = 0; ref < sequenceNames.size(); ref++) {
-      List<BinningIndexContent> binningIndexContentList = new ArrayList<>();
-      for (TabixIndex tbi : tbis) {
-        binningIndexContentList.add(getBinningIndexContent(tbi, ref));
-      }
-      BinningIndexContent binningIndexContent = mergeBinningIndexContent(ref, binningIndexContentList, offsets);
-      mergedBinningIndexContentList.add(binningIndexContent);
-    }
-
-    TabixIndex tabixIndex = new TabixIndex(formatSpec, sequenceNames, mergedBinningIndexContentList.toArray(new BinningIndexContent[0]));
-    try (LittleEndianOutputStream los = new LittleEndianOutputStream(new BlockCompressedOutputStream(tbiOut, (File) null))) {
-      tabixIndex.write(los);
     }
   }
 
