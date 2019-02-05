@@ -26,10 +26,11 @@
 package org.disq_bio.disq.impl.file;
 
 import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.util.BlockCompressedInputStream;
+import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.index.tabix.TabixIndexMerger;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
@@ -52,32 +53,26 @@ public class TbiMerger {
       throws IOException {
     logger.info("Merging .tbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
     List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
-    List<String> tbiParts = getTbiParts(parts);
-    if (partLengths.size() - 2 != tbiParts.size()) { // don't count header and terminator
+    List<String> filteredParts =
+        parts
+            .stream()
+            .filter(f -> f.endsWith(TabixIndexWriteOption.getIndexExtension()))
+            .collect(Collectors.toList());
+    if (partLengths.size() - 2 != filteredParts.size()) { // don't count header and terminator
       throw new IllegalArgumentException(
           "Cannot merge different number of VCF and TBI files in " + tempPartsDirectory);
     }
-    List<SeekableStream> tbiStreams = new ArrayList<>();
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      for (String tbiPart : tbiParts) {
-        tbiStreams.add(fileSystemWrapper.open(conf, tbiPart));
+    int i = 0;
+    try (OutputStream out = fileSystemWrapper.create(conf, outputFile);
+        TabixIndexMerger indexMerger = new TabixIndexMerger(out, partLengths.get(i++))) {
+      for (String part : filteredParts) {
+        try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
+          TabixIndex index = new TabixIndex(new BlockCompressedInputStream(in));
+          indexMerger.processIndex(index, partLengths.get(i++));
+        }
+        fileSystemWrapper.delete(conf, part);
       }
-      TabixIndexMerger.merge(partLengths, tbiStreams, out);
-    } finally {
-      for (SeekableStream stream : tbiStreams) {
-        stream.close();
-      }
-    }
-    for (String tbiPart : tbiParts) {
-      fileSystemWrapper.delete(conf, tbiPart);
     }
     logger.info("Done merging .tbi files");
-  }
-
-  private List<String> getTbiParts(List<String> parts) {
-    return parts
-        .stream()
-        .filter(f -> f.endsWith(TabixIndexWriteOption.getIndexExtension()))
-        .collect(Collectors.toList());
   }
 }
