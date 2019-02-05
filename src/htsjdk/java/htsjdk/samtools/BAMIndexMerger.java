@@ -3,6 +3,7 @@ package htsjdk.samtools;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
 
+import java.io.Closeable;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,9 +14,64 @@ import java.util.List;
  * Merges BAM index files for (headerless) parts of a BAM file into a single
  * index file. The index files must have been produced using {@link BAMIndexer2}.
  */
-public class BAMIndexMerger {
+public class BAMIndexMerger implements Closeable {
 
   private static final int UNINITIALIZED_WINDOW = -1;
+
+  private final OutputStream out;
+  private final List<Long> partLengths;
+  private int numReferences;
+  private List<List<BAMIndexContent>> content;
+  private long noCoordinateCount;
+
+  public BAMIndexMerger(final OutputStream out, final long headerLength) {
+    this.out = out;
+    this.partLengths = new ArrayList<>();
+    this.partLengths.add(headerLength);
+  }
+
+  public void processIndex(AbstractBAMFileIndex index, long partLength) {
+    this.partLengths.add(partLength);
+    if (content == null) {
+      content = new ArrayList<>();
+      numReferences = index.getNumberOfReferences();
+      for (int ref = 0; ref < numReferences; ref++) {
+        content.add(new ArrayList<>());
+      }
+    }
+    if (index.getNumberOfReferences() != numReferences) {
+      throw new IllegalArgumentException(
+          String.format("Cannot merge BAI files with different number of references, %s and %s.", numReferences, index.getNumberOfReferences()));
+    }
+    for (int ref = 0; ref < numReferences; ref++) {
+      List<BAMIndexContent> bamIndexContentList = content.get(ref);
+      bamIndexContentList.add(index.getQueryResults(ref));
+    }
+    noCoordinateCount += index.getNoCoordinateCount();
+  }
+
+  @Override
+  public void close() {
+    if (content == null) {
+      throw new IllegalArgumentException("Cannot merge zero BAI files");
+    }
+    long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
+    Arrays.parallelPrefix(offsets, (a, b) -> a + b); // cumulative offsets
+
+    try (BinaryBAMIndexWriter writer =
+             new BinaryBAMIndexWriter(numReferences, out)) {
+      for (int ref = 0; ref < numReferences; ref++) {
+        List<BAMIndexContent> bamIndexContentList = content.get(ref);
+        BAMIndexContent bamIndexContent = mergeBAMIndexContent(ref, bamIndexContentList, offsets);
+        writer.writeReference(bamIndexContent);
+      }
+      writer.writeNoCoordinateRecordCount(noCoordinateCount);
+    }
+  }
+
+  public static AbstractBAMFileIndex openIndex(SeekableStream stream, SAMSequenceDictionary dictionary) {
+    return new CachingBAMFileIndex(stream, dictionary);
+  }
 
   /**
    * Merge BAI files for (headerless) BAM file parts.
@@ -29,39 +85,21 @@ public class BAMIndexMerger {
       List<Long> partLengths,
       List<SeekableStream> baiStreams,
       OutputStream baiOut) {
-    if (baiStreams.isEmpty()) {
+
+    if (partLengths.size() - 2 != baiStreams.size()) { // don't count header and terminator
+      throw new IllegalArgumentException(
+          String.format("Cannot merge BAI files with different number of part lengths to BAI files, %s and %s.", partLengths.size(), baiStreams.size()));
+    }
+    if (partLengths.size() < 2) {
       throw new IllegalArgumentException("Cannot merge zero BAI files");
     }
     SAMSequenceDictionary dict = header.getSequenceDictionary();
-    List<AbstractBAMFileIndex> bais = new ArrayList<>();
-    for (SeekableStream baiStream : baiStreams) {
-      bais.add(new CachingBAMFileIndex(baiStream, dict));
-    }
-    int numReferences = bais.get(0).getNumberOfReferences();
-    for (AbstractBAMFileIndex bai : bais) {
-      if (bai.getNumberOfReferences() != numReferences) {
-        throw new IllegalArgumentException(
-            String.format("Cannot merge BAI files with different number of references, %s and %s.", numReferences, bai.getNumberOfReferences()));
+    int i = 0;
+    try (BAMIndexMerger bamIndexMerger = new BAMIndexMerger(baiOut, partLengths.get(i++))) {
+      for (SeekableStream baiStream : baiStreams) {
+        AbstractBAMFileIndex index = openIndex(baiStream, dict);
+        bamIndexMerger.processIndex(index, partLengths.get(i++));
       }
-    }
-    long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
-    Arrays.parallelPrefix(offsets, (a, b) -> a + b); // cumulative offsets
-
-    try (BinaryBAMIndexWriter writer =
-             new BinaryBAMIndexWriter(numReferences, baiOut)) {
-      for (int ref = 0; ref < numReferences; ref++) {
-        List<BAMIndexContent> bamIndexContentList = new ArrayList<>();
-        for (AbstractBAMFileIndex bai : bais) {
-          bamIndexContentList.add(bai.getQueryResults(ref));
-        }
-        BAMIndexContent bamIndexContent = mergeBAMIndexContent(ref, bamIndexContentList, offsets);
-        writer.writeReference(bamIndexContent);
-      }
-      long noCoordinateCount = 0;
-      for (AbstractBAMFileIndex bai : bais) {
-        noCoordinateCount += bai.getNoCoordinateCount();
-      }
-      writer.writeNoCoordinateRecordCount(noCoordinateCount);
     }
   }
 
