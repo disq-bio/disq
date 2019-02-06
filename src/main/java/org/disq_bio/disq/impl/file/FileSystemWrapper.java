@@ -43,10 +43,10 @@ public interface FileSystemWrapper extends Serializable {
 
   /** Represents a file in a directory listing. */
   class FileStatus implements Comparable<FileStatus> {
-    private static final Comparator<FileStatus> COMPARATOR = Comparator
-        .comparing(FileStatus::getPath,
-            Comparator.nullsFirst(String::compareToIgnoreCase))
-        .thenComparingLong(FileStatus::getLength);
+    private static final Comparator<FileStatus> COMPARATOR =
+        Comparator.comparing(
+                FileStatus::getPath, Comparator.nullsFirst(String::compareToIgnoreCase))
+            .thenComparingLong(FileStatus::getLength);
 
     private final String path;
     private final long length;
