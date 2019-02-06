@@ -29,6 +29,7 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +43,11 @@ public interface FileSystemWrapper extends Serializable {
 
   /** Represents a file in a directory listing. */
   class FileStatus implements Comparable<FileStatus> {
+    private static final Comparator<FileStatus> COMPARATOR = Comparator
+        .comparing(FileStatus::getPath,
+            Comparator.nullsFirst(String::compareToIgnoreCase))
+        .thenComparingLong(FileStatus::getLength);
+
     private final String path;
     private final long length;
 
@@ -62,11 +68,7 @@ public interface FileSystemWrapper extends Serializable {
 
     @Override
     public int compareTo(FileStatus o) {
-      int cmp = path.compareTo(o.path);
-      if (cmp != 0) {
-        return cmp;
-      }
-      return Long.compare(length, o.length);
+      return COMPARATOR.compare(this, o);
     }
 
     @Override
