@@ -25,13 +25,13 @@
  */
 package org.disq_bio.disq.impl.file;
 
+import htsjdk.samtools.AbstractBAMFileIndex;
 import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.BAMIndexMerger;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
@@ -57,33 +57,26 @@ public class BaiMerger {
       throws IOException {
     logger.info("Merging .bai files in temp directory {} to {}", tempPartsDirectory, outputFile);
     List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
-    List<String> baiParts = getBaiParts(parts);
-    if (partLengths.size() - 2 != baiParts.size()) { // don't count header and terminator
+    List<String> filteredParts =
+        parts
+            .stream()
+            .filter(f -> f.endsWith(BAMIndex.BAMIndexSuffix))
+            .collect(Collectors.toList());
+    if (partLengths.size() - 2 != filteredParts.size()) { // don't count header and terminator
       throw new IllegalArgumentException(
           "Cannot merge different number of BAM and BAI files in " + tempPartsDirectory);
     }
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      List<SeekableStream> baiStreams = new ArrayList<>();
-      for (String baiPart : baiParts) {
-        baiStreams.add(fileSystemWrapper.open(conf, baiPart));
+    int i = 0;
+    try (OutputStream out = fileSystemWrapper.create(conf, outputFile);
+        BAMIndexMerger indexMerger = new BAMIndexMerger(out, partLengths.get(i++))) {
+      for (String part : filteredParts) {
+        try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
+          AbstractBAMFileIndex index = BAMIndexMerger.openIndex(in, header.getSequenceDictionary());
+          indexMerger.processIndex(index, partLengths.get(i++));
+        }
+        fileSystemWrapper.delete(conf, part);
       }
-      BAMIndexMerger.merge(header, partLengths, baiStreams, out);
-
-      // TODO: close all properly - consider reading BAIs into memory
-      for (SeekableStream stream : baiStreams) {
-        stream.close();
-      }
-    }
-    for (String baiPart : baiParts) {
-      fileSystemWrapper.delete(conf, baiPart);
     }
     logger.info("Done merging .bai files");
-  }
-
-  private List<String> getBaiParts(List<String> parts) {
-    return parts
-        .stream()
-        .filter(f -> f.endsWith(BAMIndex.BAMIndexSuffix))
-        .collect(Collectors.toList());
   }
 }
