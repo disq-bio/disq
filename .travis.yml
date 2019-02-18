@@ -1,9 +1,15 @@
 language: java
+sudo: required
 jdk:
   - oraclejdk8
   - openjdk8
 env:
   - NO_GCE_CHECK=true
+script:
+  - mvn -B test -Ddisq.samtools.bin=/usr/bin/samtools -Ddisq.bcftools.bin=/usr/bin/bcftools
 cache:
   directories:
     - $HOME/.m2
+before_install:
+  - src/build/bin/install-samtools.sh
+  - src/build/bin/install-bcftools.sh
