@@ -29,7 +29,9 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 
@@ -38,6 +40,49 @@ import org.apache.hadoop.conf.Configuration;
  * filesystem operations.
  */
 public interface FileSystemWrapper extends Serializable {
+
+  /** Represents a file in a directory listing. */
+  class FileStatus implements Comparable<FileStatus> {
+    private static final Comparator<FileStatus> COMPARATOR =
+        Comparator.comparing(FileStatus::getPath, Comparator.nullsFirst(String::compareTo))
+            .thenComparingLong(FileStatus::getLength);
+
+    private final String path;
+    private final long length;
+
+    public FileStatus(String path, long length) {
+      this.path = path;
+      this.length = length;
+    }
+
+    /** @return the file path */
+    public String getPath() {
+      return path;
+    }
+
+    /** @return the length of the file in bytes */
+    public long getLength() {
+      return length;
+    }
+
+    @Override
+    public int compareTo(FileStatus o) {
+      return COMPARATOR.compare(this, o);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      FileStatus that = (FileStatus) o;
+      return length == that.length && path.equals(that.path);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(path, length);
+    }
+  }
 
   /** @return true if this implementation uses the {@link java.nio} API */
   boolean usesNio();
@@ -122,6 +167,16 @@ public interface FileSystemWrapper extends Serializable {
    * @throws IOException if an IO error occurs
    */
   List<String> listDirectory(Configuration conf, String path) throws IOException;
+
+  /**
+   * Return the file statuses of files in a directory, in lexicographic order of the paths.
+   *
+   * @param conf the Hadoop configuration
+   * @param path the path to the directory
+   * @return file statuses in lexicographic order of the paths
+   * @throws IOException if an IO error occurs
+   */
+  List<FileStatus> listDirectoryStatus(Configuration conf, String path) throws IOException;
 
   /**
    * Concatenate the contents of multiple files into a single file.

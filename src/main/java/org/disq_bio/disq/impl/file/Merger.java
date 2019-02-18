@@ -34,8 +34,19 @@ public class Merger {
 
   private final FileSystemWrapper fileSystemWrapper;
 
-  public Merger() {
-    fileSystemWrapper = new HadoopFileSystemWrapper();
+  public Merger(FileSystemWrapper fileSystemWrapper) {
+    this.fileSystemWrapper = fileSystemWrapper;
+  }
+
+  public void mergeParts(
+      Configuration conf, List<FileSystemWrapper.FileStatus> fileStatuses, String outputFile)
+      throws IOException {
+    List<String> parts =
+        fileStatuses
+            .stream()
+            .map(FileSystemWrapper.FileStatus::getPath)
+            .collect(Collectors.toList());
+    fileSystemWrapper.concat(conf, parts, outputFile);
   }
 
   public void mergeParts(Configuration conf, String tempPartsDirectory, String outputFile)

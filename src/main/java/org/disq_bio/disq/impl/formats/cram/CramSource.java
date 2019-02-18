@@ -92,14 +92,15 @@ public class CramSource extends AbstractBinarySamSource implements Serializable 
     // store paths (not full URIs) to avoid differences in scheme - this could be improved
     Map<String, NavigableSet<Long>> pathToContainerOffsets = new LinkedHashMap<>();
     if (fileSystemWrapper.isDirectory(conf, path)) {
-      List<String> paths =
+      List<FileSystemWrapper.FileStatus> statuses =
           fileSystemWrapper
-              .listDirectory(conf, path)
+              .listDirectoryStatus(conf, path)
               .stream()
-              .filter(SamFormat.CRAM::fileMatches)
+              .filter(fs -> SamFormat.CRAM.fileMatches(fs.getPath()))
               .collect(Collectors.toList());
-      for (String p : paths) {
-        long cramFileLength = fileSystemWrapper.getFileLength(conf, p);
+      for (FileSystemWrapper.FileStatus status : statuses) {
+        String p = status.getPath();
+        long cramFileLength = status.getLength();
         NavigableSet<Long> containerOffsets = getContainerOffsetsFromIndex(conf, p, cramFileLength);
         String normPath = URI.create(fileSystemWrapper.normalize(conf, p)).getPath();
         pathToContainerOffsets.put(normPath, containerOffsets);

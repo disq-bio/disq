@@ -34,7 +34,6 @@ import htsjdk.variant.vcf.VCFHeader;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaRDD;
@@ -103,18 +102,20 @@ public class VcfSink extends AbstractVcfSink {
       }
     }
 
-    List<String> vcfParts =
+    List<FileSystemWrapper.FileStatus> vcfParts =
         fileSystemWrapper
-            .listDirectory(jsc.hadoopConfiguration(), tempPartsDirectory)
+            .listDirectoryStatus(jsc.hadoopConfiguration(), tempPartsDirectory)
             .stream()
-            .filter(new HiddenFileFilter())
+            .filter(fs -> new HiddenFileFilter().test(fs.getPath()))
             .collect(Collectors.toList());
-    List<Long> partLengths = new ArrayList<>();
-    for (String part : vcfParts) {
-      partLengths.add(fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), part));
-    }
+    List<Long> partLengths =
+        vcfParts
+            .stream()
+            .mapToLong(FileSystemWrapper.FileStatus::getLength)
+            .boxed()
+            .collect(Collectors.toList());
 
-    new Merger().mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
+    new Merger(fileSystemWrapper).mergeParts(jsc.hadoopConfiguration(), vcfParts, path);
     if (writeTbiFile) {
       new TbiMerger(fileSystemWrapper)
           .mergeParts(

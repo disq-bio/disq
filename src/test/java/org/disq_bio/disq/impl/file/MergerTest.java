@@ -107,7 +107,8 @@ public class MergerTest {
     Files.write("contents1", file1, Charset.forName("UTF8"));
     Files.write("contents2", file2, Charset.forName("UTF8"));
 
-    new Merger().mergeParts(conf, dir.toURI().toString(), file3.toURI().toString());
+    new Merger(new HadoopFileSystemWrapper())
+        .mergeParts(conf, dir.toURI().toString(), file3.toURI().toString());
 
     Assert.assertEquals("contents1contents2", Files.toString(file3, Charset.forName("UTF8")));
   }
@@ -135,7 +136,7 @@ public class MergerTest {
     cluster.getFileSystem().copyFromLocalFile(new Path(file1.toURI().toString()), hdfsFile1);
     cluster.getFileSystem().copyFromLocalFile(new Path(file2.toURI().toString()), hdfsFile2);
 
-    new Merger()
+    new Merger(new HadoopFileSystemWrapper())
         .mergeParts(
             cluster.getConfiguration(0), hdfsDir.toUri().toString(), hdfsFile3.toUri().toString());
 
