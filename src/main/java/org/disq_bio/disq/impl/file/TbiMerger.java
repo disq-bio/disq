@@ -32,6 +32,11 @@ import htsjdk.tribble.index.tabix.TabixIndexMerger;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.disq_bio.disq.TabixIndexWriteOption;
@@ -63,16 +68,33 @@ public class TbiMerger {
           "Cannot merge different number of VCF and TBI files in " + tempPartsDirectory);
     }
     int i = 0;
+    ExecutorService executorService = Executors.newFixedThreadPool(8);
     try (OutputStream out = fileSystemWrapper.create(conf, outputFile);
         TabixIndexMerger indexMerger = new TabixIndexMerger(out, partLengths.get(i++))) {
-      for (String part : filteredParts) {
-        try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
-          TabixIndex index = new TabixIndex(new BlockCompressedInputStream(in));
-          indexMerger.processIndex(index, partLengths.get(i++));
-        }
-        fileSystemWrapper.delete(conf, part);
+      List<Callable<TabixIndex>> callables =
+          filteredParts
+              .stream()
+              .map(part -> (Callable<TabixIndex>) () -> readIndex(conf, part))
+              .collect(Collectors.toList());
+      for (Future<TabixIndex> futureIndex : executorService.invokeAll(callables)) {
+        indexMerger.processIndex(futureIndex.get(), partLengths.get(i++));
       }
+    } catch (InterruptedException e) {
+      throw new IOException(e);
+    } catch (ExecutionException e) {
+      throw new IOException(e.getCause());
+    } finally {
+      executorService.shutdown();
     }
     logger.info("Done merging .tbi files");
+  }
+
+  private TabixIndex readIndex(Configuration conf, String file) throws IOException {
+    TabixIndex index;
+    try (SeekableStream in = fileSystemWrapper.open(conf, file)) {
+      index = new TabixIndex(new BlockCompressedInputStream(in));
+    }
+    fileSystemWrapper.delete(conf, file);
+    return index;
   }
 }
