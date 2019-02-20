@@ -27,10 +27,15 @@ package org.disq_bio.disq.impl.file;
 
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexMerger;
+import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -60,16 +65,34 @@ public class SbiMerger {
             .stream()
             .filter(f -> f.endsWith(SBIIndex.FILE_EXTENSION))
             .collect(Collectors.toList());
+    ExecutorService executorService = Executors.newFixedThreadPool(8);
     try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      SBIIndexMerger sbiIndexMerger = new SBIIndexMerger(out, headerLength);
-      for (String sbiPartFile : filteredParts) {
-        try (InputStream in = fileSystemWrapper.open(conf, sbiPartFile)) {
-          sbiIndexMerger.processIndex(SBIIndex.load(in));
-        }
-        fileSystemWrapper.delete(conf, sbiPartFile);
+      SBIIndexMerger indexMerger = new SBIIndexMerger(out, headerLength);
+      List<Callable<SBIIndex>> callables =
+          filteredParts
+              .stream()
+              .map(part -> (Callable<SBIIndex>) () -> readIndex(conf, part))
+              .collect(Collectors.toList());
+      for (Future<SBIIndex> futureIndex : executorService.invokeAll(callables)) {
+        indexMerger.processIndex(futureIndex.get());
       }
-      sbiIndexMerger.finish(fileLength);
+      indexMerger.finish(fileLength);
+    } catch (InterruptedException e) {
+      throw new IOException(e);
+    } catch (ExecutionException e) {
+      throw new IOException(e.getCause());
+    } finally {
+      executorService.shutdown();
     }
     logger.info("Done merging .sbi files");
+  }
+
+  private SBIIndex readIndex(Configuration conf, String file) throws IOException {
+    SBIIndex index;
+    try (SeekableStream in = fileSystemWrapper.open(conf, file)) {
+      index = SBIIndex.load(in);
+    }
+    fileSystemWrapper.delete(conf, file);
+    return index;
   }
 }
