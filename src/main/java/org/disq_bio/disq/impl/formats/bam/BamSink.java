@@ -123,7 +123,12 @@ public class BamSink extends AbstractSamSink {
     if (writeSbiFile) {
       new SbiMerger(fileSystemWrapper)
           .mergeParts(
-              conf, tempPartsDirectory, path + SBIIndex.FILE_EXTENSION, partLengths, fileLength);
+              conf,
+              tempPartsDirectory,
+              path + SBIIndex.FILE_EXTENSION,
+              header,
+              partLengths,
+              fileLength);
     }
     if (writeBaiFile) {
       new BaiMerger(fileSystemWrapper)

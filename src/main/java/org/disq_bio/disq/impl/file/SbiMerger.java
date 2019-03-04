@@ -25,75 +25,39 @@
  */
 package org.disq_bio.disq.impl.file;
 
+import htsjdk.samtools.IndexMerger;
+import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexMerger;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class SbiMerger {
-
-  private static final Logger logger = LoggerFactory.getLogger(SbiMerger.class);
-
-  private final FileSystemWrapper fileSystemWrapper;
+public class SbiMerger extends IndexFileMerger<SBIIndex, SAMFileHeader> {
 
   public SbiMerger(FileSystemWrapper fileSystemWrapper) {
-    this.fileSystemWrapper = fileSystemWrapper;
+    super(fileSystemWrapper);
   }
 
-  public void mergeParts(
-      Configuration conf,
-      String tempPartsDirectory,
-      String outputFile,
-      List<Long> partLengths,
-      long fileLength)
+  @Override
+  protected String getIndexExtension() {
+    return SBIIndex.FILE_EXTENSION;
+  }
+
+  @Override
+  protected IndexMerger<SBIIndex> newIndexMerger(OutputStream out, long headerLength) {
+    return new SBIIndexMerger(out, headerLength);
+  }
+
+  @Override
+  protected SBIIndex readIndex(Configuration conf, String part, SAMFileHeader header)
       throws IOException {
-    logger.info("Merging .sbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
-    List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
-    List<String> filteredParts =
-        parts
-            .stream()
-            .filter(f -> f.endsWith(SBIIndex.FILE_EXTENSION))
-            .collect(Collectors.toList());
-    int i = 0;
-    ExecutorService executorService = Executors.newFixedThreadPool(8);
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      SBIIndexMerger indexMerger = new SBIIndexMerger(out, partLengths.get(i++));
-      List<Callable<SBIIndex>> callables =
-          filteredParts
-              .stream()
-              .map(part -> (Callable<SBIIndex>) () -> readIndex(conf, part))
-              .collect(Collectors.toList());
-      for (Future<SBIIndex> futureIndex : executorService.invokeAll(callables)) {
-        indexMerger.processIndex(futureIndex.get(), partLengths.get(i++));
-      }
-      indexMerger.finish(fileLength);
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    } catch (ExecutionException e) {
-      throw new IOException(e.getCause());
-    } finally {
-      executorService.shutdown();
-    }
-    logger.info("Done merging .sbi files");
-  }
-
-  private SBIIndex readIndex(Configuration conf, String file) throws IOException {
     SBIIndex index;
-    try (SeekableStream in = fileSystemWrapper.open(conf, file)) {
+    try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
       index = SBIIndex.load(in);
     }
-    fileSystemWrapper.delete(conf, file);
+    fileSystemWrapper.delete(conf, part);
     return index;
   }
 }

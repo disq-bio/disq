@@ -123,6 +123,7 @@ public class VcfSink extends AbstractVcfSink {
               jsc.hadoopConfiguration(),
               tempPartsDirectory,
               path + TabixIndexWriteOption.getIndexExtension(),
+              vcfHeader,
               partLengths,
               fileLength);
     }
