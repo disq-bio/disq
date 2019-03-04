@@ -3,7 +3,6 @@ package htsjdk.samtools;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
 
-import java.io.Closeable;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,22 +13,19 @@ import java.util.List;
  * Merges BAM index files for (headerless) parts of a BAM file into a single
  * index file. The index files must have been produced using {@link BAMIndexer2}.
  */
-public class BAMIndexMerger implements Closeable {
+public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
 
   private static final int UNINITIALIZED_WINDOW = -1;
 
-  private final OutputStream out;
-  private final List<Long> partLengths;
   private int numReferences;
   private final List<List<BAMIndexContent>> content = new ArrayList<>();
   private long noCoordinateCount;
 
   public BAMIndexMerger(final OutputStream out, final long headerLength) {
-    this.out = out;
-    this.partLengths = new ArrayList<>();
-    this.partLengths.add(headerLength);
+    super(out, headerLength);
   }
 
+  @Override
   public void processIndex(AbstractBAMFileIndex index, long partLength) {
     this.partLengths.add(partLength);
     if (content.isEmpty()) {
@@ -50,7 +46,7 @@ public class BAMIndexMerger implements Closeable {
   }
 
   @Override
-  public void close() {
+  public void finish(long dataFileLength) {
     if (content.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero BAI files");
     }
@@ -70,36 +66,6 @@ public class BAMIndexMerger implements Closeable {
 
   public static AbstractBAMFileIndex openIndex(SeekableStream stream, SAMSequenceDictionary dictionary) {
     return new CachingBAMFileIndex(stream, dictionary);
-  }
-
-  /**
-   * Merge BAI files for (headerless) BAM file parts.
-   * @param header the header for the file
-   * @param partLengths the lengths, in bytes, of the headerless BAM file parts
-   * @param baiStreams streams for the BAI files to merge
-   * @param baiOut the output stream for the resulting merged BAI
-   */
-  public static void merge(
-      SAMFileHeader header,
-      List<Long> partLengths,
-      List<SeekableStream> baiStreams,
-      OutputStream baiOut) {
-
-    if (partLengths.size() - 2 != baiStreams.size()) { // don't count header and terminator
-      throw new IllegalArgumentException(
-          String.format("Cannot merge BAI files with different number of part lengths to BAI files, %s and %s.", partLengths.size(), baiStreams.size()));
-    }
-    if (partLengths.size() < 2) {
-      throw new IllegalArgumentException("Cannot merge zero BAI files");
-    }
-    SAMSequenceDictionary dict = header.getSequenceDictionary();
-    int i = 0;
-    try (BAMIndexMerger bamIndexMerger = new BAMIndexMerger(baiOut, partLengths.get(i++))) {
-      for (SeekableStream baiStream : baiStreams) {
-        AbstractBAMFileIndex index = openIndex(baiStream, dict);
-        bamIndexMerger.processIndex(index, partLengths.get(i++));
-      }
-    }
   }
 
   private static BAMIndexContent mergeBAMIndexContent(int referenceSequence,

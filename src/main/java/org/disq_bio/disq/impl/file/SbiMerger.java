@@ -55,7 +55,7 @@ public class SbiMerger {
       Configuration conf,
       String tempPartsDirectory,
       String outputFile,
-      long headerLength,
+      List<Long> partLengths,
       long fileLength)
       throws IOException {
     logger.info("Merging .sbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
@@ -65,16 +65,17 @@ public class SbiMerger {
             .stream()
             .filter(f -> f.endsWith(SBIIndex.FILE_EXTENSION))
             .collect(Collectors.toList());
+    int i = 0;
     ExecutorService executorService = Executors.newFixedThreadPool(8);
     try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      SBIIndexMerger indexMerger = new SBIIndexMerger(out, headerLength);
+      SBIIndexMerger indexMerger = new SBIIndexMerger(out, partLengths.get(i++));
       List<Callable<SBIIndex>> callables =
           filteredParts
               .stream()
               .map(part -> (Callable<SBIIndex>) () -> readIndex(conf, part))
               .collect(Collectors.toList());
       for (Future<SBIIndex> futureIndex : executorService.invokeAll(callables)) {
-        indexMerger.processIndex(futureIndex.get());
+        indexMerger.processIndex(futureIndex.get(), partLengths.get(i++));
       }
       indexMerger.finish(fileLength);
     } catch (InterruptedException e) {

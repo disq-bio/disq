@@ -58,7 +58,8 @@ public class BaiMerger {
       String tempPartsDirectory,
       String outputFile,
       SAMFileHeader header,
-      List<Long> partLengths)
+      List<Long> partLengths,
+      long fileLength)
       throws IOException {
     logger.info("Merging .bai files in temp directory {} to {}", tempPartsDirectory, outputFile);
     List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
@@ -73,8 +74,8 @@ public class BaiMerger {
     }
     int i = 0;
     ExecutorService executorService = Executors.newFixedThreadPool(8);
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile);
-        BAMIndexMerger indexMerger = new BAMIndexMerger(out, partLengths.get(i++))) {
+    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
+      BAMIndexMerger indexMerger = new BAMIndexMerger(out, partLengths.get(i++));
       List<Callable<AbstractBAMFileIndex>> callables =
           filteredParts
               .stream()
@@ -83,6 +84,7 @@ public class BaiMerger {
       for (Future<AbstractBAMFileIndex> futureIndex : executorService.invokeAll(callables)) {
         indexMerger.processIndex(futureIndex.get(), partLengths.get(i++));
       }
+      indexMerger.finish(fileLength);
     } catch (InterruptedException e) {
       throw new IOException(e);
     } catch (ExecutionException e) {

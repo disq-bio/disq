@@ -99,7 +99,6 @@ public class BamSink extends AbstractSamSink {
     try (OutputStream out = fileSystemWrapper.create(conf, headerFile)) {
       BAMFileWriter.writeHeader(out, header);
     }
-    long headerLength = fileSystemWrapper.getFileLength(conf, headerFile);
 
     String terminatorFile = tempPartsDirectory + "/terminator";
     try (OutputStream out = fileSystemWrapper.create(conf, terminatorFile)) {
@@ -124,12 +123,17 @@ public class BamSink extends AbstractSamSink {
     if (writeSbiFile) {
       new SbiMerger(fileSystemWrapper)
           .mergeParts(
-              conf, tempPartsDirectory, path + SBIIndex.FILE_EXTENSION, headerLength, fileLength);
+              conf, tempPartsDirectory, path + SBIIndex.FILE_EXTENSION, partLengths, fileLength);
     }
     if (writeBaiFile) {
       new BaiMerger(fileSystemWrapper)
           .mergeParts(
-              conf, tempPartsDirectory, path + BAMIndex.BAMIndexSuffix, header, partLengths);
+              conf,
+              tempPartsDirectory,
+              path + BAMIndex.BAMIndexSuffix,
+              header,
+              partLengths,
+              fileLength);
     }
     fileSystemWrapper.delete(conf, tempPartsDirectory);
   }

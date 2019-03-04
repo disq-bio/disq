@@ -2,13 +2,11 @@ package htsjdk.tribble.index.tabix;
 
 import htsjdk.samtools.BAMIndexMerger;
 import htsjdk.samtools.BinningIndexContent;
+import htsjdk.samtools.IndexMerger;
 import htsjdk.samtools.LinearIndex;
-import htsjdk.samtools.seekablestream.SeekableStream;
-import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.util.LittleEndianOutputStream;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,20 +16,17 @@ import java.util.Arrays;
 import java.util.List;
 
 /** Merges tabix files for parts of a file that have been concatenated. */
-public class TabixIndexMerger implements Closeable {
+public class TabixIndexMerger extends IndexMerger<TabixIndex> {
 
-  private final OutputStream out;
-  private final List<Long> partLengths;
   private TabixFormat formatSpec;
   private final List<String> sequenceNames = new ArrayList<>();
   private final List<List<BinningIndexContent>> content = new ArrayList<>();
 
   public TabixIndexMerger(final OutputStream out, final long headerLength) {
-    this.out = out;
-    this.partLengths = new ArrayList<>();
-    this.partLengths.add(headerLength);
+    super(out, headerLength);
   }
 
+  @Override
   public void processIndex(TabixIndex index, long partLength) {
     this.partLengths.add(partLength);
     if (content.isEmpty()) {
@@ -58,7 +53,7 @@ public class TabixIndexMerger implements Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void finish(long dataFileLength) throws IOException {
     if (content.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero tabix files");
     }
@@ -74,32 +69,6 @@ public class TabixIndexMerger implements Closeable {
     TabixIndex tabixIndex = new TabixIndex(formatSpec, sequenceNames, mergedBinningIndexContentList.toArray(new BinningIndexContent[0]));
     try (LittleEndianOutputStream los = new LittleEndianOutputStream(new BlockCompressedOutputStream(out, (File) null))) {
       tabixIndex.write(los);
-    }
-  }
-
-  /**
-   * Merge tabix files for (headerless) file parts.
-   * @param partLengths the lengths, in bytes, of the headerless file parts
-   * @param tbiStreams streams for the tabix files to merge
-   * @param tbiOut the output stream for the resulting merged tabix file
-   */
-  public static void merge(
-      List<Long> partLengths,
-      List<SeekableStream> tbiStreams,
-      OutputStream tbiOut) throws IOException {
-    if (partLengths.size() - 2 != tbiStreams.size()) { // don't count header and terminator
-      throw new IllegalArgumentException(
-          String.format("Cannot merge tabix files with different number of part lengths to tabix files, %s and %s.", partLengths.size(), tbiStreams.size()));
-    }
-    if (partLengths.size() < 2) {
-      throw new IllegalArgumentException("Cannot merge zero tabix files");
-    }
-    int i = 0;
-    try (TabixIndexMerger tabixIndexMerger = new TabixIndexMerger(tbiOut, partLengths.get(i++))) {
-      for (SeekableStream tbiStream : tbiStreams) {
-        TabixIndex index = new TabixIndex(new BlockCompressedInputStream(tbiStream));
-        tabixIndexMerger.processIndex(index, partLengths.get(i++));
-      }
     }
   }
 

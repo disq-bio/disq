@@ -54,7 +54,11 @@ public class TbiMerger {
   }
 
   public void mergeParts(
-      Configuration conf, String tempPartsDirectory, String outputFile, List<Long> partLengths)
+      Configuration conf,
+      String tempPartsDirectory,
+      String outputFile,
+      List<Long> partLengths,
+      long fileLength)
       throws IOException {
     logger.info("Merging .tbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
     List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
@@ -69,8 +73,8 @@ public class TbiMerger {
     }
     int i = 0;
     ExecutorService executorService = Executors.newFixedThreadPool(8);
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile);
-        TabixIndexMerger indexMerger = new TabixIndexMerger(out, partLengths.get(i++))) {
+    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
+      TabixIndexMerger indexMerger = new TabixIndexMerger(out, partLengths.get(i++));
       List<Callable<TabixIndex>> callables =
           filteredParts
               .stream()
@@ -79,6 +83,7 @@ public class TbiMerger {
       for (Future<TabixIndex> futureIndex : executorService.invokeAll(callables)) {
         indexMerger.processIndex(futureIndex.get(), partLengths.get(i++));
       }
+      indexMerger.finish(fileLength);
     } catch (InterruptedException e) {
       throw new IOException(e);
     } catch (ExecutionException e) {
