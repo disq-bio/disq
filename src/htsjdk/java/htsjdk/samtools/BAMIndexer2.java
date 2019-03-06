@@ -235,9 +235,7 @@ public class BAMIndexer2 {
 
                 @Override
                 public Integer getIndexingBin() {
-                    final Integer binNumber = rec.getIndexingBin();
-                    return (binNumber == null ? rec.computeIndexingBin() : binNumber);
-
+                    return rec.computeIndexingBin();
                 }
 
                 @Override
