@@ -6,7 +6,7 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.RuntimeEOFException;
-import java.io.EOFException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -57,7 +57,7 @@ public final class BAMSBIIndexer {
           final int blockSize = byteBuffer.getInt(0); // length of remainder of alignment record
           indexWriter.processRecord(recordStart);
           InputStreamUtils.skipFully(blockIn, blockSize);
-        } catch (EOFException e) {
+        } catch (RuntimeEOFException e) {
           break;
         }
       }
