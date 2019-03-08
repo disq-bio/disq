@@ -25,59 +25,41 @@
  */
 package org.disq_bio.disq.impl.file;
 
+import htsjdk.samtools.IndexMerger;
 import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.util.BlockCompressedInputStream;
+import htsjdk.tribble.index.tabix.TabixIndex;
 import htsjdk.tribble.index.tabix.TabixIndexMerger;
+import htsjdk.variant.vcf.VCFHeader;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.disq_bio.disq.TabixIndexWriteOption;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Merges tabix index files for (headerless) parts of a VCF file into a single index file. */
-public class TbiMerger {
-  private static final Logger logger = LoggerFactory.getLogger(TbiMerger.class);
-
-  private final FileSystemWrapper fileSystemWrapper;
-
+public class TbiMerger extends IndexFileMerger<TabixIndex, VCFHeader> {
   public TbiMerger(FileSystemWrapper fileSystemWrapper) {
-    this.fileSystemWrapper = fileSystemWrapper;
+    super(fileSystemWrapper);
   }
 
-  public void mergeParts(
-      Configuration conf, String tempPartsDirectory, String outputFile, List<Long> partLengths)
+  @Override
+  protected String getIndexExtension() {
+    return TabixIndexWriteOption.getIndexExtension();
+  }
+
+  @Override
+  protected IndexMerger<TabixIndex> newIndexMerger(OutputStream out, long headerLength) {
+    return new TabixIndexMerger(out, headerLength);
+  }
+
+  @Override
+  protected TabixIndex readIndex(Configuration conf, String part, VCFHeader header)
       throws IOException {
-    logger.info("Merging .tbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
-    List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
-    List<String> tbiParts = getTbiParts(parts);
-    if (partLengths.size() - 2 != tbiParts.size()) { // don't count header and terminator
-      throw new IllegalArgumentException(
-          "Cannot merge different number of VCF and TBI files in " + tempPartsDirectory);
+    TabixIndex index;
+    try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
+      index = new TabixIndex(new BlockCompressedInputStream(in));
     }
-    List<SeekableStream> tbiStreams = new ArrayList<>();
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      for (String tbiPart : tbiParts) {
-        tbiStreams.add(fileSystemWrapper.open(conf, tbiPart));
-      }
-      TabixIndexMerger.merge(partLengths, tbiStreams, out);
-    } finally {
-      for (SeekableStream stream : tbiStreams) {
-        stream.close();
-      }
-    }
-    for (String tbiPart : tbiParts) {
-      fileSystemWrapper.delete(conf, tbiPart);
-    }
-    logger.info("Done merging .tbi files");
-  }
-
-  private List<String> getTbiParts(List<String> parts) {
-    return parts
-        .stream()
-        .filter(f -> f.endsWith(TabixIndexWriteOption.getIndexExtension()))
-        .collect(Collectors.toList());
+    fileSystemWrapper.delete(conf, part);
+    return index;
   }
 }

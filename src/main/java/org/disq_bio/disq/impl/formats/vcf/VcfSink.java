@@ -116,13 +116,16 @@ public class VcfSink extends AbstractVcfSink {
             .collect(Collectors.toList());
 
     new Merger(fileSystemWrapper).mergeParts(jsc.hadoopConfiguration(), vcfParts, path);
+    long fileLength = fileSystemWrapper.getFileLength(jsc.hadoopConfiguration(), path);
     if (writeTbiFile) {
       new TbiMerger(fileSystemWrapper)
           .mergeParts(
               jsc.hadoopConfiguration(),
               tempPartsDirectory,
               path + TabixIndexWriteOption.getIndexExtension(),
-              partLengths);
+              vcfHeader,
+              partLengths,
+              fileLength);
     }
 
     fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);

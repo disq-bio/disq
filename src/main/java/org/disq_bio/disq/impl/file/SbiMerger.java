@@ -25,51 +25,39 @@
  */
 package org.disq_bio.disq.impl.file;
 
+import htsjdk.samtools.IndexMerger;
+import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexMerger;
+import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class SbiMerger {
-
-  private static final Logger logger = LoggerFactory.getLogger(SbiMerger.class);
-
-  private final FileSystemWrapper fileSystemWrapper;
+public class SbiMerger extends IndexFileMerger<SBIIndex, SAMFileHeader> {
 
   public SbiMerger(FileSystemWrapper fileSystemWrapper) {
-    this.fileSystemWrapper = fileSystemWrapper;
+    super(fileSystemWrapper);
   }
 
-  public void mergeParts(
-      Configuration conf,
-      String tempPartsDirectory,
-      String outputFile,
-      long headerLength,
-      long fileLength)
+  @Override
+  protected String getIndexExtension() {
+    return SBIIndex.FILE_EXTENSION;
+  }
+
+  @Override
+  protected IndexMerger<SBIIndex> newIndexMerger(OutputStream out, long headerLength) {
+    return new SBIIndexMerger(out, headerLength);
+  }
+
+  @Override
+  protected SBIIndex readIndex(Configuration conf, String part, SAMFileHeader header)
       throws IOException {
-    logger.info("Merging .sbi files in temp directory {} to {}", tempPartsDirectory, outputFile);
-    List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
-    List<String> filteredParts =
-        parts
-            .stream()
-            .filter(f -> f.endsWith(SBIIndex.FILE_EXTENSION))
-            .collect(Collectors.toList());
-    try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
-      SBIIndexMerger sbiIndexMerger = new SBIIndexMerger(out, headerLength);
-      for (String sbiPartFile : filteredParts) {
-        try (InputStream in = fileSystemWrapper.open(conf, sbiPartFile)) {
-          sbiIndexMerger.processIndex(SBIIndex.load(in));
-        }
-        fileSystemWrapper.delete(conf, sbiPartFile);
-      }
-      sbiIndexMerger.finish(fileLength);
+    SBIIndex index;
+    try (SeekableStream in = fileSystemWrapper.open(conf, part)) {
+      index = SBIIndex.load(in);
     }
-    logger.info("Done merging .sbi files");
+    fileSystemWrapper.delete(conf, part);
+    return index;
   }
 }
