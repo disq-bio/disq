@@ -40,8 +40,7 @@ public class BoundedTraversalUtil {
 
     // Convert each SimpleInterval to a QueryInterval
     final QueryInterval[] convertedIntervals =
-        rawIntervals
-            .stream()
+        rawIntervals.stream()
             .map(
                 rawInterval ->
                     convertSimpleIntervalToQueryInterval(rawInterval, sequenceDictionary))

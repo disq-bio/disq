@@ -103,14 +103,12 @@ public class VcfSink extends AbstractVcfSink {
     }
 
     List<FileSystemWrapper.FileStatus> vcfParts =
-        fileSystemWrapper
-            .listDirectoryStatus(jsc.hadoopConfiguration(), tempPartsDirectory)
+        fileSystemWrapper.listDirectoryStatus(jsc.hadoopConfiguration(), tempPartsDirectory)
             .stream()
             .filter(fs -> new HiddenFileFilter().test(fs.getPath()))
             .collect(Collectors.toList());
     List<Long> partLengths =
-        vcfParts
-            .stream()
+        vcfParts.stream()
             .mapToLong(FileSystemWrapper.FileStatus::getLength)
             .boxed()
             .collect(Collectors.toList());

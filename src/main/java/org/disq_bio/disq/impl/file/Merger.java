@@ -42,8 +42,7 @@ public class Merger {
       Configuration conf, List<FileSystemWrapper.FileStatus> fileStatuses, String outputFile)
       throws IOException {
     List<String> parts =
-        fileStatuses
-            .stream()
+        fileStatuses.stream()
             .map(FileSystemWrapper.FileStatus::getPath)
             .collect(Collectors.toList());
     fileSystemWrapper.concat(conf, parts, outputFile);

@@ -83,8 +83,7 @@ public abstract class IndexFileMerger<I, H> {
     try (OutputStream out = fileSystemWrapper.create(conf, outputFile)) {
       IndexMerger<I> indexMerger = newIndexMerger(out, partLengths.get(i++));
       List<Callable<I>> callables =
-          filteredParts
-              .stream()
+          filteredParts.stream()
               .map(part -> (Callable<I>) () -> readIndex(conf, part, header))
               .collect(Collectors.toList());
       for (Future<I> futureIndex : executorService.invokeAll(callables)) {

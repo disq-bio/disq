@@ -152,8 +152,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   static void concat(List<String> parts, Path outputPath, FileSystem filesystem)
       throws IOException {
     org.apache.hadoop.fs.Path[] fsParts =
-        parts
-            .stream()
+        parts.stream()
             .map(Path::new)
             .collect(Collectors.toList())
             .toArray(new org.apache.hadoop.fs.Path[parts.size()]);

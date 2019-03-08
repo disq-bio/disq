@@ -93,9 +93,7 @@ public class CramSource extends AbstractBinarySamSource implements Serializable 
     Map<String, NavigableSet<Long>> pathToContainerOffsets = new LinkedHashMap<>();
     if (fileSystemWrapper.isDirectory(conf, path)) {
       List<FileSystemWrapper.FileStatus> statuses =
-          fileSystemWrapper
-              .listDirectoryStatus(conf, path)
-              .stream()
+          fileSystemWrapper.listDirectoryStatus(conf, path).stream()
               .filter(fs -> SamFormat.CRAM.fileMatches(fs.getPath()))
               .collect(Collectors.toList());
       for (FileSystemWrapper.FileStatus status : statuses) {

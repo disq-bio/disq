@@ -106,14 +106,11 @@ public class BamSink extends AbstractSamSink {
     }
 
     List<FileSystemWrapper.FileStatus> bamParts =
-        fileSystemWrapper
-            .listDirectoryStatus(conf, tempPartsDirectory)
-            .stream()
+        fileSystemWrapper.listDirectoryStatus(conf, tempPartsDirectory).stream()
             .filter(fs -> new HiddenFileFilter().test(fs.getPath()))
             .collect(Collectors.toList());
     List<Long> partLengths =
-        bamParts
-            .stream()
+        bamParts.stream()
             .mapToLong(FileSystemWrapper.FileStatus::getLength)
             .boxed()
             .collect(Collectors.toList());
