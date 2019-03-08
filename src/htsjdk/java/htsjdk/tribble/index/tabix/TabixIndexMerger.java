@@ -23,8 +23,8 @@ public class TabixIndexMerger implements Closeable {
   private final OutputStream out;
   private final List<Long> partLengths;
   private TabixFormat formatSpec;
-  private List<String> sequenceNames;
-  private List<List<BinningIndexContent>> content;
+  private final List<String> sequenceNames = new ArrayList<>();
+  private final List<List<BinningIndexContent>> content = new ArrayList<>();
 
   public TabixIndexMerger(final OutputStream out, final long headerLength) {
     this.out = out;
@@ -34,10 +34,11 @@ public class TabixIndexMerger implements Closeable {
 
   public void processIndex(TabixIndex index, long partLength) {
     this.partLengths.add(partLength);
-    if (content == null) {
-      content = new ArrayList<>();
+    if (content.isEmpty()) {
       formatSpec = index.getFormatSpec();
-      sequenceNames = index.getSequenceNames();
+      if (index.getSequenceNames() != null) {
+        sequenceNames.addAll(index.getSequenceNames());
+      }
       for (int ref = 0; ref < sequenceNames.size(); ref++) {
         content.add(new ArrayList<>());
       }
@@ -46,7 +47,7 @@ public class TabixIndexMerger implements Closeable {
       throw new IllegalArgumentException(
           String.format("Cannot merge tabix files with different formats, %s and %s.", index.getFormatSpec(), formatSpec));
     }
-    if (!index.getSequenceNames().equals(sequenceNames)) {
+    if (!sequenceNames.equals(index.getSequenceNames())) {
       throw new IllegalArgumentException(
           String.format("Cannot merge tabix files with different sequence names, %s and %s.", index.getSequenceNames(), sequenceNames));
     }
@@ -58,7 +59,7 @@ public class TabixIndexMerger implements Closeable {
 
   @Override
   public void close() throws IOException {
-    if (content == null) {
+    if (content.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero tabix files");
     }
     long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();

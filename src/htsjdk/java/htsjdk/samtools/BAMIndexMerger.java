@@ -21,7 +21,7 @@ public class BAMIndexMerger implements Closeable {
   private final OutputStream out;
   private final List<Long> partLengths;
   private int numReferences;
-  private List<List<BAMIndexContent>> content;
+  private final List<List<BAMIndexContent>> content = new ArrayList<>();
   private long noCoordinateCount;
 
   public BAMIndexMerger(final OutputStream out, final long headerLength) {
@@ -32,8 +32,7 @@ public class BAMIndexMerger implements Closeable {
 
   public void processIndex(AbstractBAMFileIndex index, long partLength) {
     this.partLengths.add(partLength);
-    if (content == null) {
-      content = new ArrayList<>();
+    if (content.isEmpty()) {
       numReferences = index.getNumberOfReferences();
       for (int ref = 0; ref < numReferences; ref++) {
         content.add(new ArrayList<>());
@@ -52,7 +51,7 @@ public class BAMIndexMerger implements Closeable {
 
   @Override
   public void close() {
-    if (content == null) {
+    if (content.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero BAI files");
     }
     long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
