@@ -56,6 +56,8 @@ public class HtsjdkReadsRddTest extends BaseTest {
     return new Object[][] {
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
+      {"1-with-splitting-index.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
+      {"1-with-splitting-index.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, true},
       {"valid_no_index.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
@@ -134,29 +136,6 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     // check we can read back what we've just written
     Assert.assertEquals(expectedCount, htsjdkReadsRddStorage.read(outputPath).getReads().count());
-  }
-
-  private Object[] parametersForTestReadUsingSBIIndex() {
-    return new Object[][] {
-      {"1-with-splitting-index.bam", 128 * 1024, false},
-      {"1-with-splitting-index.bam", 128 * 1024, true},
-    };
-  }
-
-  @Test
-  @Parameters
-  public void testReadUsingSBIIndex(String inputFile, int splitSize, boolean useNio)
-      throws Exception {
-    String inputPath = getPath(inputFile);
-
-    HtsjdkReadsRddStorage htsjdkReadsRddStorage =
-        HtsjdkReadsRddStorage.makeDefault(jsc).splitSize(splitSize).useNio(useNio);
-
-    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
-
-    // read the file using htsjdk to get expected number of reads, then count the number in the RDD
-    int expectedCount = AnySamTestUtil.countReads(inputPath);
-    Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
   }
 
   private Object[] parametersForTestWriteSBIIndex() {
