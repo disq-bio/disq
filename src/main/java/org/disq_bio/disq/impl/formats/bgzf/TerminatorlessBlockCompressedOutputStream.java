@@ -26,9 +26,9 @@
 package org.disq_bio.disq.impl.formats.bgzf;
 
 import htsjdk.samtools.util.BlockCompressedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 
 /**
  * An extension of {@link BlockCompressedOutputStream} that doesn't write an empty BGZF block at the
@@ -37,8 +37,8 @@ import java.io.OutputStream;
 public class TerminatorlessBlockCompressedOutputStream extends BlockCompressedOutputStream {
   private final OutputStream out;
 
-  public TerminatorlessBlockCompressedOutputStream(OutputStream os, File file) {
-    super(os, file);
+  public TerminatorlessBlockCompressedOutputStream(OutputStream os) {
+    super(os, (Path) null);
     this.out = os;
   }
 

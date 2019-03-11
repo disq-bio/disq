@@ -26,12 +26,13 @@
 package org.disq_bio.disq;
 
 import htsjdk.samtools.SBIIndex;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.spark.SparkConf;
@@ -68,29 +69,24 @@ public abstract class BaseTest {
     return resource.toURI().toString();
   }
 
-  private File createTempFile(String extension) throws IOException {
-    File file = File.createTempFile("test", extension);
-    file.delete();
-    file.deleteOnExit();
-    return file;
-  }
-
   protected String createTempPath(String extension) throws IOException {
-    return createTempFile(extension).toURI().toString();
+    final Path tempFile = Files.createTempFile("test", extension);
+    Files.deleteIfExists(tempFile);
+    tempFile.toFile().deleteOnExit();
+    return tempFile.toUri().toString();
   }
 
-  protected List<String> listPartFiles(String dir) {
-    return Arrays.stream(
-            new File(URI.create(dir)).listFiles(file -> file.getName().startsWith("part-")))
-        .map(f -> f.toURI().toString())
+  protected List<String> listPartFiles(String dir) throws IOException {
+    return Files.list(Paths.get(URI.create(dir)))
+        .filter(path -> path.getFileName().toString().startsWith("part-"))
+        .map(path -> path.toUri().toString())
         .collect(Collectors.toList());
   }
 
-  protected List<String> listSBIIndexFiles(String dir) {
-    return Arrays.stream(
-            new File(URI.create(dir))
-                .listFiles(file -> file.getName().endsWith(SBIIndex.FILE_EXTENSION)))
-        .map(f -> f.toURI().toString())
+  protected List<String> listSBIIndexFiles(String dir) throws IOException {
+    return Files.list(Paths.get(URI.create(dir)))
+        .filter(path -> path.getFileName().toString().endsWith(SBIIndex.FILE_EXTENSION))
+        .map(path -> path.toUri().toString())
         .collect(Collectors.toList());
   }
 }
