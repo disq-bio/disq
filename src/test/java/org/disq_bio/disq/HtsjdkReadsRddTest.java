@@ -46,13 +46,18 @@ import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(JUnitParamsRunner.class)
 public class HtsjdkReadsRddTest extends BaseTest {
 
-  private Object[] parametersForTestReadAndWrite() {
+  protected boolean inputFileMatches(String inputFile) {
+    return true;
+  }
+
+  protected Object[] parametersForTestReadAndWrite() {
     return new Object[][] {
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
@@ -105,6 +110,9 @@ public class HtsjdkReadsRddTest extends BaseTest {
       int splitSize,
       boolean useNio)
       throws Exception {
+
+    Assume.assumeTrue(inputFileMatches(inputFile));
+
     String inputPath = getPath(inputFile);
     String refPath = getPath(cramReferenceFile);
 

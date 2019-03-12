@@ -150,6 +150,12 @@
             <classifier>shaded</classifier>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.jsr203hadoop</groupId>
+            <artifactId>jsr203hadoop</artifactId>
+            <version>1.0.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

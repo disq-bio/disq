@@ -30,9 +30,15 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.spark.SparkConf;
@@ -58,6 +64,37 @@ public abstract class BaseTest {
     jsc.stop();
   }
 
+  protected static void copyLocalResourcesToTargetFilesystem(Path targetBaseDir) throws Exception {
+    Path source = Paths.get("src/test/resources");
+    Files.walkFileTree(
+        source,
+        EnumSet.of(FileVisitOption.FOLLOW_LINKS),
+        Integer.MAX_VALUE,
+        new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+              throws IOException {
+            Path rel = source.relativize(dir);
+            Path targetdir = targetBaseDir.resolve(rel.toString());
+            try {
+              Files.copy(dir, targetdir);
+            } catch (FileAlreadyExistsException e) {
+              if (!Files.isDirectory(targetdir)) {
+                throw e;
+              }
+            }
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+              throws IOException {
+            Files.copy(file, targetBaseDir.resolve(source.relativize(file).toString()));
+            return FileVisitResult.CONTINUE;
+          }
+        });
+  }
+
   protected String getPath(String pathOrLocalResource) throws URISyntaxException {
     if (pathOrLocalResource == null) {
       return null;
@@ -69,10 +106,26 @@ public abstract class BaseTest {
     return resource.toURI().toString();
   }
 
+  /**
+   * @return a path for the temporary directory, or <code>null</code> to for the default local
+   *     temporary directory
+   */
+  protected Path getTempDir() {
+    return null;
+  }
+
   protected String createTempPath(String extension) throws IOException {
-    final Path tempFile = Files.createTempFile("test", extension);
+    Path tempDir = getTempDir();
+    final Path tempFile =
+        tempDir == null
+            ? Files.createTempFile("test", extension)
+            : Files.createTempFile(tempDir, "test", extension);
     Files.deleteIfExists(tempFile);
-    tempFile.toFile().deleteOnExit();
+    try {
+      tempFile.toFile().deleteOnExit();
+    } catch (UnsupportedOperationException e) {
+      // not local filesystem, ignore
+    }
     return tempFile.toUri().toString();
   }
 
