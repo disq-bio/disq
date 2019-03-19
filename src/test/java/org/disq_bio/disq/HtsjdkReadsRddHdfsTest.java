@@ -86,4 +86,9 @@ public class HtsjdkReadsRddHdfsTest extends HtsjdkReadsRddTest {
   protected boolean inputFileMatches(String inputFile) {
     return !inputFile.startsWith("gs://"); // ignore gs: files
   }
+
+  @Override
+  protected boolean runSamtools() {
+    return false; // files aren't local
+  }
 }

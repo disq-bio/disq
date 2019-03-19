@@ -57,6 +57,10 @@ public class HtsjdkReadsRddTest extends BaseTest {
     return true;
   }
 
+  protected boolean runSamtools() {
+    return true;
+  }
+
   protected Object[] parametersForTestReadAndWrite() {
     return new Object[][] {
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
@@ -138,7 +142,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     // check the new file has the number of expected reads
     Assert.assertEquals(expectedCount, AnySamTestUtil.countReads(outputPath, refPath));
-    if (SamtoolsTestUtil.isSamtoolsAvailable()) {
+    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()) {
       Assert.assertEquals(expectedCount, SamtoolsTestUtil.countReads(outputPath, refPath));
     }
 
@@ -238,7 +242,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
     // for multiple file, check there are no sbi files
     Assert.assertTrue(listSBIIndexFiles(outputPath).isEmpty());
 
-    if (SamtoolsTestUtil.isSamtoolsAvailable()) {
+    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()) {
       int totalCountSamtools = 0;
       for (String part : listPartFiles(outputPath)) {
         totalCountSamtools += SamtoolsTestUtil.countReads(part, refPath);
@@ -381,7 +385,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
 
     // also check the count with samtools (except for SAM since it cannot do intervals)
-    if (SamtoolsTestUtil.isSamtoolsAvailable()
+    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()
         && !formatWriteOption.equals(ReadsFormatWriteOption.SAM)) {
       int expectedCountSamtools =
           SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);
