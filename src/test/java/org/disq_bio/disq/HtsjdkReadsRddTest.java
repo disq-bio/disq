@@ -385,7 +385,8 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
 
     // also check the count with samtools (except for SAM since it cannot do intervals)
-    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()
+    if (runSamtools()
+        && SamtoolsTestUtil.isSamtoolsAvailable()
         && !formatWriteOption.equals(ReadsFormatWriteOption.SAM)) {
       int expectedCountSamtools =
           SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);
