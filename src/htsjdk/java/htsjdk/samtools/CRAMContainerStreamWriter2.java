@@ -59,7 +59,7 @@ public class CRAMContainerStreamWriter2 {
     private Set<String> captureTags = new TreeSet<>();
     private Set<String> ignoreTags = new TreeSet<>();
 
-    private CRAMBAIIndexer indexer;
+    private CRAMCRAIIndexer indexer;
     private long offset;
 
     /**
@@ -84,7 +84,7 @@ public class CRAMContainerStreamWriter2 {
         this.source = source;
         containerFactory = new ContainerFactory(samFileHeader, recordsPerSlice);
         if (indexStream != null) {
-            indexer = new CRAMBAIIndexer(indexStream, samFileHeader);
+            indexer = new CRAMCRAIIndexer(indexStream, samFileHeader);
         }
     }
 
@@ -449,11 +449,7 @@ public class CRAMContainerStreamWriter2 {
         container.offset = offset;
         offset += ContainerIO.writeContainer(cramVersion, container, outputStream);
         if (indexer != null) {
-            /**
-             * Using silent validation here because the reads have been through validation already or
-             * they have been generated somehow through the htsjdk.
-             */
-            indexer.processContainer(container, ValidationStringency.SILENT);
+            indexer.processContainer(container);
         }
         samRecords.clear();
         refSeqIndex = REF_SEQ_INDEX_NOT_INITIALIZED;
