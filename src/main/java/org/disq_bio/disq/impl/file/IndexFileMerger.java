@@ -56,7 +56,8 @@ public abstract class IndexFileMerger<I, H> {
 
   protected abstract String getIndexExtension();
 
-  protected abstract IndexMerger<I> newIndexMerger(final OutputStream out, final long headerLength);
+  protected abstract IndexMerger<I> newIndexMerger(final OutputStream out, final long headerLength)
+      throws IOException;
 
   public void mergeParts(
       Configuration conf,

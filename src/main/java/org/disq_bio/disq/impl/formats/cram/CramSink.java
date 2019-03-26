@@ -25,22 +25,28 @@
  */
 package org.disq_bio.disq.impl.formats.cram;
 
-import htsjdk.samtools.CRAMContainerStreamWriter;
+import htsjdk.samtools.CRAMContainerStreamWriter2;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.cram.CRAIIndex;
 import htsjdk.samtools.cram.build.CramIO;
 import htsjdk.samtools.cram.common.CramVersions;
 import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.disq_bio.disq.CraiWriteOption;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.impl.file.CraiMerger;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
+import org.disq_bio.disq.impl.file.HiddenFileFilter;
 import org.disq_bio.disq.impl.file.Merger;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSink;
 import scala.Tuple2;
@@ -69,37 +75,58 @@ public class CramSink extends AbstractSamSink {
       throws IOException {
 
     Broadcast<SAMFileHeader> headerBroadcast = jsc.broadcast(header);
+    boolean writeCraiFile =
+        header.getSortOrder() == SAMFileHeader.SortOrder.coordinate
+            && indexesToEnable.contains(CraiWriteOption.getIndexExtension());
+    Configuration conf = jsc.hadoopConfiguration();
     reads
         .mapPartitions(
             readIterator -> {
               CramOutputFormat.setHeader(headerBroadcast.getValue());
               CramOutputFormat.setReferenceSourcePath(referenceSourcePath);
+              CramOutputFormat.setWriteCraiFile(writeCraiFile);
               return readIterator;
             })
         .mapToPair(
             (PairFunction<SAMRecord, Void, SAMRecord>) samRecord -> new Tuple2<>(null, samRecord))
         .saveAsNewAPIHadoopFile(
-            tempPartsDirectory,
-            Void.class,
-            SAMRecord.class,
-            CramOutputFormat.class,
-            jsc.hadoopConfiguration());
+            tempPartsDirectory, Void.class, SAMRecord.class, CramOutputFormat.class, conf);
 
     String headerFile = tempPartsDirectory + "/header";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, headerFile)) {
       CRAMReferenceSource referenceSource =
-          CramReferenceSourceBuilder.build(
-              fileSystemWrapper, jsc.hadoopConfiguration(), referenceSourcePath);
+          CramReferenceSourceBuilder.build(fileSystemWrapper, conf, referenceSourcePath);
       writeHeader(header, out, headerFile, referenceSource);
     }
 
     String terminatorFile = tempPartsDirectory + "/terminator";
-    try (OutputStream out = fileSystemWrapper.create(jsc.hadoopConfiguration(), terminatorFile)) {
+    try (OutputStream out = fileSystemWrapper.create(conf, terminatorFile)) {
       CramIO.issueEOF(CramVersions.DEFAULT_CRAM_VERSION, out);
     }
 
-    new Merger(fileSystemWrapper).mergeParts(jsc.hadoopConfiguration(), tempPartsDirectory, path);
-    fileSystemWrapper.delete(jsc.hadoopConfiguration(), tempPartsDirectory);
+    List<FileSystemWrapper.FileStatus> cramParts =
+        fileSystemWrapper.listDirectoryStatus(conf, tempPartsDirectory).stream()
+            .filter(fs -> new HiddenFileFilter().test(fs.getPath()))
+            .collect(Collectors.toList());
+    List<Long> partLengths =
+        cramParts.stream()
+            .mapToLong(FileSystemWrapper.FileStatus::getLength)
+            .boxed()
+            .collect(Collectors.toList());
+
+    new Merger(fileSystemWrapper).mergeParts(conf, cramParts, path);
+    if (writeCraiFile) {
+      long fileLength = fileSystemWrapper.getFileLength(conf, path);
+      new CraiMerger(fileSystemWrapper)
+          .mergeParts(
+              conf,
+              tempPartsDirectory,
+              path + CRAIIndex.CRAI_INDEX_SUFFIX,
+              header,
+              partLengths,
+              fileLength);
+    }
+    fileSystemWrapper.delete(conf, tempPartsDirectory);
   }
 
   private void writeHeader(
@@ -107,8 +134,8 @@ public class CramSink extends AbstractSamSink {
       OutputStream out,
       String headerFile,
       CRAMReferenceSource referenceSource) {
-    CRAMContainerStreamWriter cramWriter =
-        new CRAMContainerStreamWriter(out, null, referenceSource, header, headerFile);
+    CRAMContainerStreamWriter2 cramWriter =
+        new CRAMContainerStreamWriter2(out, null, referenceSource, header, headerFile);
     cramWriter.writeHeader(header);
     cramWriter.finish(false); // don't write terminator
   }

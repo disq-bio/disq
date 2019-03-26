@@ -95,7 +95,7 @@ public abstract class BaseTest {
         });
   }
 
-  protected String getPath(String pathOrLocalResource) throws URISyntaxException {
+  protected static String getPath(String pathOrLocalResource) throws URISyntaxException {
     if (pathOrLocalResource == null) {
       return null;
     }

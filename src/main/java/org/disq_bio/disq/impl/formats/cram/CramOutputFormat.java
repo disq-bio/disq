@@ -25,9 +25,10 @@
  */
 package org.disq_bio.disq.impl.formats.cram;
 
-import htsjdk.samtools.CRAMContainerStreamWriter;
+import htsjdk.samtools.CRAMContainerStreamWriter2;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.cram.CRAIIndex;
 import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,6 +51,7 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
 
   private static SAMFileHeader header;
   private static String referenceSourcePath;
+  private static boolean writeCraiFile;
 
   public static void setHeader(SAMFileHeader samFileHeader) {
     header = samFileHeader;
@@ -59,28 +61,50 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
     CramOutputFormat.referenceSourcePath = referenceSourcePath;
   }
 
+  public static void setWriteCraiFile(boolean writeCraiFile) {
+    CramOutputFormat.writeCraiFile = writeCraiFile;
+  }
+
   @Override
   public RecordWriter<Void, SAMRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
       throws IOException {
     Path file = getDefaultWorkFile(taskAttemptContext, "");
+    Path craiFile;
+    if (writeCraiFile) {
+      // ensure CRAI files are hidden so they don't interfere with merging of part files
+      craiFile = new Path(file.getParent(), "." + file.getName() + CRAIIndex.CRAI_INDEX_SUFFIX);
+    } else {
+      craiFile = null;
+    }
     return new CramRecordWriter(
-        taskAttemptContext.getConfiguration(), file, header, referenceSourcePath);
+        taskAttemptContext.getConfiguration(), file, header, referenceSourcePath, craiFile);
   }
 
   static class CramRecordWriter extends RecordWriter<Void, SAMRecord> {
 
     private final OutputStream out;
-    private final CRAMContainerStreamWriter cramWriter;
+    private final CRAMContainerStreamWriter2 cramWriter;
 
     public CramRecordWriter(
-        Configuration conf, Path file, SAMFileHeader header, String referenceSourcePath)
+        Configuration conf,
+        Path file,
+        SAMFileHeader header,
+        String referenceSourcePath,
+        Path craiFile)
         throws IOException {
       this.out = file.getFileSystem(conf).create(file);
       FileSystemWrapper fileSystemWrapper = new HadoopFileSystemWrapper();
       CRAMReferenceSource referenceSource =
           CramReferenceSourceBuilder.build(fileSystemWrapper, conf, referenceSourcePath);
+      OutputStream indexStream;
+      if (craiFile != null) {
+        indexStream = craiFile.getFileSystem(conf).create(craiFile);
+      } else {
+        indexStream = null;
+      }
       cramWriter =
-          new CRAMContainerStreamWriter(out, null, referenceSource, header, file.toString());
+          new CRAMContainerStreamWriter2(
+              out, indexStream, referenceSource, header, file.toString());
     }
 
     @Override
