@@ -85,7 +85,7 @@ public class CraiMergingTest extends BaseTest {
       SamReaderFactory factory =
           SamReaderFactory.makeDefault()
               .enable(SamReaderFactory.Option.INCLUDE_SOURCE_IN_RECORDS)
-              .referenceSequence(Paths.get(URI.create(getPath(cramReferenceFile))));
+              .referenceSequence(Paths.get(URI.create(getPathOrLocalResource(cramReferenceFile))));
       return factory.open(p).getFileHeader().getSortOrder() == SAMFileHeader.SortOrder.coordinate;
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
