@@ -40,15 +40,12 @@ import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.SamStreams;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.cram.ref.ReferenceSource;
-import htsjdk.samtools.seekablestream.SeekableFileStream;
+import htsjdk.samtools.seekablestream.SeekablePathStream;
 import htsjdk.samtools.util.Locatable;
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -88,14 +85,18 @@ public class AnySamTestUtil {
           String.format("test-read-%03d-unplaced-unmapped", numPairs++));
     }
 
-    final File bamFile = File.createTempFile("test", samFormat.getExtension());
-    bamFile.deleteOnExit();
+    final Path bamFile = Files.createTempFile("test", samFormat.getExtension());
+    try {
+      bamFile.toFile().deleteOnExit();
+    } catch (UnsupportedOperationException e) {
+      // non-local files will be cleaned up by deleting the directory
+    }
     SAMFileHeader samHeader = samRecordSetBuilder.getHeader();
     final SAMFileWriter bamWriter;
     if (samFormat.equals(SamFormat.CRAM)) {
       bamWriter =
           new SAMFileWriterFactory()
-              .makeCRAMWriter(samHeader, true, bamFile, new File(URI.create(refPath)));
+              .makeCRAMWriter(samHeader, true, bamFile, NioFileSystemWrapper.asPath(refPath));
     } else {
       bamWriter = new SAMFileWriterFactory().makeSAMOrBAMWriter(samHeader, true, bamFile);
     }
@@ -108,9 +109,9 @@ public class AnySamTestUtil {
     if (sortOrder.equals(SAMFileHeader.SortOrder.coordinate)) {
       if (samFormat.equals(SamFormat.CRAM)) {
         OutputStream out =
-            new FileOutputStream(
-                new File(bamFile.getAbsolutePath() + samFormat.getIndexExtension()));
-        CRAMCRAIIndexer.writeIndex(new SeekableFileStream(bamFile), out);
+            Files.newOutputStream(
+                bamFile.resolveSibling(bamFile.getFileName() + samFormat.getIndexExtension()));
+        CRAMCRAIIndexer.writeIndex(new SeekablePathStream(bamFile), out);
       } else if (samFormat.equals(SamFormat.BAM)) {
         SamReader samReader =
             SamReaderFactory.makeDefault()
@@ -118,15 +119,16 @@ public class AnySamTestUtil {
                 .open(bamFile);
         BAMIndexer.createIndex(
             samReader,
-            new File(
+            bamFile.resolveSibling(
                 bamFile
-                    .getAbsolutePath()
+                    .getFileName()
+                    .toString()
                     .replaceFirst(samFormat.getExtension() + "$", samFormat.getIndexExtension())));
       }
       // no index for SAM
     }
 
-    return bamFile.toURI().toString();
+    return bamFile.toUri().toString();
   }
 
   public static int countReads(final String samPath) throws IOException {
@@ -152,7 +154,7 @@ public class AnySamTestUtil {
       throws IOException {
 
     final Path samFile = NioFileSystemWrapper.asPath(samPath);
-    final File refFile = refPath == null ? null : new File(URI.create(refPath));
+    final Path refFile = refPath == null ? null : NioFileSystemWrapper.asPath(refPath);
 
     // test file contents is consistent with extension
     try (InputStream in = new BufferedInputStream(Files.newInputStream(samFile))) {

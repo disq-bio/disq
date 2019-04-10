@@ -28,14 +28,12 @@ package org.disq_bio.disq.impl.file;
 import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.disq_bio.disq.HdfsTestUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -44,53 +42,17 @@ import org.junit.Test;
 public class MergerTest {
 
   private static MiniDFSCluster cluster;
-  private static URI clusterUri;
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
-    cluster = startMini(MergerTest.class.getName());
-    clusterUri = formalizeClusterURI(cluster.getFileSystem().getUri());
+    cluster = HdfsTestUtil.startMiniCluster(MergerTest.class.getName());
   }
 
   @AfterClass
-  public static void teardownClass() throws Exception {
+  public static void teardownClass() {
     if (cluster != null) {
       cluster.shutdown();
     }
-  }
-
-  private static MiniDFSCluster startMini(String testName) throws IOException {
-    File baseDir = new File("./target/hdfs/" + testName).getAbsoluteFile();
-    FileUtil.fullyDelete(baseDir);
-    Configuration conf = new Configuration();
-    conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
-    MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-    MiniDFSCluster hdfsCluster = builder.clusterId(testName).build();
-    hdfsCluster.waitActive();
-    return hdfsCluster;
-  }
-
-  protected static URI formalizeClusterURI(URI clusterUri) throws URISyntaxException {
-    if (clusterUri.getPath() == null) {
-      return new URI(
-          clusterUri.getScheme(),
-          null,
-          clusterUri.getHost(),
-          clusterUri.getPort(),
-          "/",
-          null,
-          null);
-    } else if (clusterUri.getPath().trim() == "") {
-      return new URI(
-          clusterUri.getScheme(),
-          null,
-          clusterUri.getHost(),
-          clusterUri.getPort(),
-          "/",
-          null,
-          null);
-    }
-    return clusterUri;
   }
 
   @Test

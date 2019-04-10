@@ -27,9 +27,11 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.util.Locatable;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
@@ -50,8 +52,8 @@ public class SamtoolsTestUtil {
           SAMTOOLS_BIN_PROPERTY);
       return false;
     }
-    File binFile = new File(bin);
-    if (!binFile.exists()) {
+    Path binFile = Paths.get(bin);
+    if (!Files.exists(binFile)) {
       throw new IllegalArgumentException(
           String.format(
               "%s property is set to non-existent file: %s", SAMTOOLS_BIN_PROPERTY, binFile));
@@ -75,16 +77,16 @@ public class SamtoolsTestUtil {
       final String samPath, String refPath, HtsjdkReadsTraversalParameters<T> traversalParameters)
       throws IOException {
 
-    final File samFile = new File(URI.create(samPath));
-    final File refFile = refPath == null ? null : new File(URI.create(refPath));
+    final Path samFile = Paths.get(URI.create(samPath));
+    final Path refFile = refPath == null ? null : Paths.get(URI.create(refPath));
     CommandLine commandLine = new CommandLine(getSamtoolsBin());
     commandLine.addArgument("view");
     commandLine.addArgument("-c"); // count
     if (refFile != null) {
       commandLine.addArgument("-T");
-      commandLine.addArgument(refFile.getAbsolutePath());
+      commandLine.addArgument(refFile.toAbsolutePath().toString());
     }
-    commandLine.addArgument(samFile.getAbsolutePath());
+    commandLine.addArgument(samFile.toAbsolutePath().toString());
     if (traversalParameters != null) {
       if (traversalParameters.getIntervalsForTraversal() != null) {
         for (T locatable : traversalParameters.getIntervalsForTraversal()) {

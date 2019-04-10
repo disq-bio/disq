@@ -26,9 +26,9 @@
 package org.disq_bio.disq.impl.formats.bgzf;
 
 import htsjdk.samtools.util.BlockCompressedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import org.apache.hadoop.io.compress.CompressionOutputStream;
 
 /**
@@ -44,7 +44,7 @@ public class BGZFCompressionOutputStream extends CompressionOutputStream {
 
   public BGZFCompressionOutputStream(OutputStream out) throws IOException {
     super(out);
-    this.output = new BlockCompressedOutputStream(out, (File) null);
+    this.output = new BlockCompressedOutputStream(out, (Path) null);
   }
 
   public void write(int b) throws IOException {
@@ -61,7 +61,7 @@ public class BGZFCompressionOutputStream extends CompressionOutputStream {
 
   public void resetState() throws IOException {
     output.flush();
-    output = new BlockCompressedOutputStream(out, (File) null);
+    output = new BlockCompressedOutputStream(out, (Path) null);
   }
 
   public void close() throws IOException {

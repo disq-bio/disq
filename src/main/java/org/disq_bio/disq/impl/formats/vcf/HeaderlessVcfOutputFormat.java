@@ -31,7 +31,6 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VCFWriterHelper;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.vcf.VCFHeader;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
@@ -75,7 +74,7 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
       }
       this.variantContextWriter =
           VCFWriterHelper.buildVCFWriter(
-              blockCompress ? new TerminatorlessBlockCompressedOutputStream(out, (File) null) : out,
+              blockCompress ? new TerminatorlessBlockCompressedOutputStream(out) : out,
               header.getSequenceDictionary(),
               tabixIndexCreator,
               tbiFile != null);

@@ -31,9 +31,9 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.spark.api.java.JavaRDD;
@@ -88,7 +88,7 @@ public class VcfSink extends AbstractVcfSink {
         tempPartsDirectory + "/header" + (compressed ? BGZFCodec.DEFAULT_EXTENSION : "");
     try (OutputStream headerOut = fileSystemWrapper.create(jsc.hadoopConfiguration(), headerFile)) {
       OutputStream out =
-          compressed ? new BlockCompressedOutputStream(headerOut, (File) null) : headerOut;
+          compressed ? new BlockCompressedOutputStream(headerOut, (Path) null) : headerOut;
       VariantContextWriter writer =
           new VariantContextWriterBuilder().clearOptions().setOutputVCFStream(out).build();
       writer.writeHeader(vcfHeader);

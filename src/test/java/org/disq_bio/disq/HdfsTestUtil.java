@@ -23,28 +23,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.disq_bio.disq.impl.formats.bgzf;
+package org.disq_bio.disq;
 
-import htsjdk.samtools.util.BlockCompressedOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Path;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 
-/**
- * An extension of {@link BlockCompressedOutputStream} that doesn't write an empty BGZF block at the
- * end of the stream.
- */
-public class TerminatorlessBlockCompressedOutputStream extends BlockCompressedOutputStream {
-  private final OutputStream out;
+public class HdfsTestUtil {
 
-  public TerminatorlessBlockCompressedOutputStream(OutputStream os) {
-    super(os, (Path) null);
-    this.out = os;
-  }
-
-  @Override
-  public void close() throws IOException {
-    super.flush();
-    out.close();
+  public static MiniDFSCluster startMiniCluster(String testName) throws IOException {
+    File baseDir = new File("./target/hdfs/" + testName).getAbsoluteFile();
+    FileUtil.fullyDelete(baseDir);
+    Configuration conf = new Configuration();
+    conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+    MiniDFSCluster hdfsCluster = new MiniDFSCluster.Builder(conf).clusterId(testName).build();
+    hdfsCluster.waitActive();
+    return hdfsCluster;
   }
 }

@@ -46,16 +46,27 @@ import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(JUnitParamsRunner.class)
 public class HtsjdkReadsRddTest extends BaseTest {
 
-  private Object[] parametersForTestReadAndWrite() {
+  protected boolean inputFileMatches(String inputFile) {
+    return true;
+  }
+
+  protected boolean runSamtools() {
+    return true;
+  }
+
+  protected Object[] parametersForTestReadAndWrite() {
     return new Object[][] {
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
       {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
+      {"1-with-splitting-index.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
+      {"1-with-splitting-index.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
       {"valid.cram", "valid.fasta", ReadsFormatWriteOption.CRAM, 128 * 1024, true},
       {"valid.cram", "valid.fasta.gz", ReadsFormatWriteOption.CRAM, 128 * 1024, false},
@@ -105,6 +116,9 @@ public class HtsjdkReadsRddTest extends BaseTest {
       int splitSize,
       boolean useNio)
       throws Exception {
+
+    Assume.assumeTrue(inputFileMatches(inputFile));
+
     String inputPath = getPath(inputFile);
     String refPath = getPath(cramReferenceFile);
 
@@ -130,35 +144,12 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     // check the new file has the number of expected reads
     Assert.assertEquals(expectedCount, AnySamTestUtil.countReads(outputPath, refPath));
-    if (SamtoolsTestUtil.isSamtoolsAvailable()) {
+    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()) {
       Assert.assertEquals(expectedCount, SamtoolsTestUtil.countReads(outputPath, refPath));
     }
 
     // check we can read back what we've just written
     Assert.assertEquals(expectedCount, htsjdkReadsRddStorage.read(outputPath).getReads().count());
-  }
-
-  private Object[] parametersForTestReadUsingSBIIndex() {
-    return new Object[][] {
-      {"1-with-splitting-index.bam", 128 * 1024, false},
-      {"1-with-splitting-index.bam", 128 * 1024, true},
-    };
-  }
-
-  @Test
-  @Parameters
-  public void testReadUsingSBIIndex(String inputFile, int splitSize, boolean useNio)
-      throws Exception {
-    String inputPath = getPath(inputFile);
-
-    HtsjdkReadsRddStorage htsjdkReadsRddStorage =
-        HtsjdkReadsRddStorage.makeDefault(jsc).splitSize(splitSize).useNio(useNio);
-
-    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
-
-    // read the file using htsjdk to get expected number of reads, then count the number in the RDD
-    int expectedCount = AnySamTestUtil.countReads(inputPath);
-    Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
   }
 
   private Object[] parametersForTestWriteSBIIndex() {
@@ -253,7 +244,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
     // for multiple file, check there are no sbi files
     Assert.assertTrue(listSBIIndexFiles(outputPath).isEmpty());
 
-    if (SamtoolsTestUtil.isSamtoolsAvailable()) {
+    if (runSamtools() && SamtoolsTestUtil.isSamtoolsAvailable()) {
       int totalCountSamtools = 0;
       for (String part : listPartFiles(outputPath)) {
         totalCountSamtools += SamtoolsTestUtil.countReads(part, refPath);
@@ -396,7 +387,8 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertEquals(expectedCount, htsjdkReadsRdd.getReads().count());
 
     // also check the count with samtools (except for SAM since it cannot do intervals)
-    if (SamtoolsTestUtil.isSamtoolsAvailable()
+    if (runSamtools()
+        && SamtoolsTestUtil.isSamtoolsAvailable()
         && !formatWriteOption.equals(ReadsFormatWriteOption.SAM)) {
       int expectedCountSamtools =
           SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);

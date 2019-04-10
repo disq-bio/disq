@@ -27,9 +27,11 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.util.Locatable;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
@@ -50,8 +52,8 @@ public class BcftoolsTestUtil {
           BCFTOOLS_BIN_PROPERTY);
       return false;
     }
-    File binFile = new File(bin);
-    if (!binFile.exists()) {
+    Path binFile = Paths.get(bin);
+    if (!Files.exists(binFile)) {
       throw new IllegalArgumentException(
           String.format(
               "%s property is set to non-existent file: %s", BCFTOOLS_BIN_PROPERTY, binFile));
@@ -69,11 +71,11 @@ public class BcftoolsTestUtil {
 
   public static <T extends Locatable> int countVariants(String vcfPath, T interval)
       throws IOException {
-    File vcfFile = new File(URI.create(vcfPath));
+    Path vcfFile = Paths.get(URI.create(vcfPath));
     CommandLine commandLine = new CommandLine(getBcftoolsBin());
     commandLine.addArgument("view");
     commandLine.addArgument("-H"); // no header
-    commandLine.addArgument(vcfFile.getAbsolutePath());
+    commandLine.addArgument(vcfFile.toAbsolutePath().toString());
     if (interval != null) {
       commandLine.addArgument(
           String.format("%s:%s-%s", interval.getContig(), interval.getStart(), interval.getEnd()));

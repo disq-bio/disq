@@ -82,7 +82,7 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
       this.conf = conf;
       this.file = file;
       this.out = file.getFileSystem(conf).create(file);
-      this.compressedOut = new TerminatorlessBlockCompressedOutputStream(out, null);
+      this.compressedOut = new TerminatorlessBlockCompressedOutputStream(out);
       this.binaryCodec = new BinaryCodec(compressedOut);
       this.bamRecordCodec = new BAMRecordCodec(header);
       bamRecordCodec.setOutputStream(compressedOut);
