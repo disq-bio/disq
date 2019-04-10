@@ -195,6 +195,8 @@ public class HtsjdkReadsRddStorage {
         tempPartsDirectoryWriteOption = (TempPartsDirectoryWriteOption) writeOption;
       } else if (writeOption instanceof BaiWriteOption && writeOption == BaiWriteOption.ENABLE) {
         indexesToEnable.add(BaiWriteOption.getIndexExtension());
+      } else if (writeOption instanceof CraiWriteOption && writeOption == CraiWriteOption.ENABLE) {
+        indexesToEnable.add(CraiWriteOption.getIndexExtension());
       } else if (writeOption instanceof SbiWriteOption && writeOption == SbiWriteOption.ENABLE) {
         indexesToEnable.add(SbiWriteOption.getIndexExtension());
       }

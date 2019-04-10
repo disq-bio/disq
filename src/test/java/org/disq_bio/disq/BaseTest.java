@@ -95,7 +95,8 @@ public abstract class BaseTest {
         });
   }
 
-  protected String getPath(String pathOrLocalResource) throws URISyntaxException {
+  protected static String getPathOrLocalResource(String pathOrLocalResource)
+      throws URISyntaxException {
     if (pathOrLocalResource == null) {
       return null;
     }
@@ -104,6 +105,10 @@ public abstract class BaseTest {
       return pathOrLocalResource;
     }
     return resource.toURI().toString();
+  }
+
+  protected String getPath(String pathOrLocalResource) throws URISyntaxException {
+    return getPathOrLocalResource(pathOrLocalResource);
   }
 
   /**
