@@ -26,6 +26,7 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMFlag;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import java.io.Closeable;
@@ -170,8 +171,11 @@ class BamRecordGuesser implements Closeable {
     int cigarOpsLength = numCigarOps * 4;
     int seqLength = buf.getInt(20) + (buf.getInt(20) + 1) / 2;
 
-    if ((flags & 4) == 0 && (seqLength == 0 || numCigarOps == 0)) {
-      return NO_START; // Non-empty cigar/seq in mapped reads
+    boolean mapped = SAMFlag.READ_UNMAPPED.isUnset(flags);
+    boolean secondary = SAMFlag.SECONDARY_ALIGNMENT.isSet(flags);
+    if (mapped && ((seqLength == 0 && !secondary) || numCigarOps == 0)) {
+      // Non-empty cigar/seq in mapped reads, except secondary alignments can have '*' seq
+      return NO_START;
     }
 
     // Pos 36 + nameLength
