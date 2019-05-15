@@ -30,6 +30,8 @@ import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.BAMIndexMerger;
 import htsjdk.samtools.IndexMerger;
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.cram.io.InputStreamUtils;
+import htsjdk.samtools.seekablestream.ByteArraySeekableStream;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -56,7 +58,10 @@ public class BaiMerger extends IndexFileMerger<AbstractBAMFileIndex, SAMFileHead
       throws IOException {
     AbstractBAMFileIndex index;
     try (SeekableStream in = fileSystemWrapper.open(conf, file)) {
-      index = BAMIndexMerger.openIndex(in, header.getSequenceDictionary());
+      // read all bytes into memory since BAMIndexMerger.openIndex is lazy
+      byte[] bytes = InputStreamUtils.readFully(in);
+      SeekableStream allIn = new ByteArraySeekableStream(bytes);
+      index = BAMIndexMerger.openIndex(allIn, header.getSequenceDictionary());
     }
     fileSystemWrapper.delete(conf, file);
     return index;
