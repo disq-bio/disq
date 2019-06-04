@@ -31,7 +31,7 @@ below for details on each feature.
 | Sharded output                  | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            | :white_check_mark:            |
 | Indexes - read heuristic        | :white_check_mark:            | :white_check_mark:            | NA                            | NA                            |
 | Indexes - read .bai/.crai       | :x:                           | :white_check_mark:            | NA                            | NA                            |
-| Indexes - write .bai/.crai      | :white_check_mark:            | :x:                           | NA                            | NA                            |
+| Indexes - write .bai/.crai      | :white_check_mark:            | :white_check_mark:            | NA                            | NA                            |
 | Indexes - read .sbi             | :white_check_mark:            | NA                            | NA                            | NA                            |
 | Indexes - write .sbi            | :white_check_mark:            | NA                            | NA                            | NA                            |
 | Indexes - write .tbi            | NA                            | NA                            | NA                            | :white_check_mark:            |
