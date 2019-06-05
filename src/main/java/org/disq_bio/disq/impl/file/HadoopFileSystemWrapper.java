@@ -137,7 +137,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
       }
       fileSystem.rename(tmp, target);
     } catch (UnsupportedOperationException e) {
-      logger.warn("Concat not supported, merging serially");
+      logger.info("Concat not supported, merging serially");
       try (OutputStream out = create(conf, path)) {
         for (String part : parts) {
           try (InputStream in = open(conf, part)) {
