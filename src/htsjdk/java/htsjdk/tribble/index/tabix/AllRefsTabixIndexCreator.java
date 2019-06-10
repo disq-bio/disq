@@ -27,6 +27,7 @@ import htsjdk.samtools.BinningIndexBuilder;
 import htsjdk.samtools.BinningIndexContent;
 import htsjdk.samtools.Chunk;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.tribble.Feature;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexCreator;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 // This is a copy of htsjdk.tribble.index.tabix.TabixIndexCreator, except sequence
 // names are populated from the header, not from the ones that are seen. This
@@ -44,17 +46,12 @@ import java.util.Set;
  * IndexCreator for Tabix.
  * Features are expected to be 1-based, inclusive.
  */
-public class FixedTabixIndexCreator implements IndexCreator {
+public class AllRefsTabixIndexCreator implements IndexCreator {
     private final TabixFormat formatSpec;
     private final List<BinningIndexContent> indexContents = new ArrayList<BinningIndexContent>();
-    private final List<String> sequenceNames = new ArrayList<String>();
-    // Merely a faster way to ensure that features are added in a specific sequence name order
-    private final Set<String> sequenceNamesSeen = new HashSet<String>();
-    // A sequence dictionary is not required, but if it is provided all sequences names must be present in it.
-    // It is used to determine the length of a sequence in order to optimize index memory allocation.
     private final SAMSequenceDictionary sequenceDictionary;
 
-    private String currentSequenceName = null;
+    private int currentReferenceIndex = -1;
     private BinningIndexBuilder indexBuilder = null;
     // A feature can't be added to the index until the next feature is added because the next feature
     // defines the location of the end of the previous feature in the output file.
@@ -65,26 +62,29 @@ public class FixedTabixIndexCreator implements IndexCreator {
      * @param sequenceDictionary is not required, but if present all features added must refer to sequences in the
      *                           dictionary.  It is used to optimize the memory needed to build the index.
      */
-    public FixedTabixIndexCreator(final SAMSequenceDictionary sequenceDictionary,
-                                  final TabixFormat formatSpec) {
+    public AllRefsTabixIndexCreator(final SAMSequenceDictionary sequenceDictionary,
+                                    final TabixFormat formatSpec) {
         this.sequenceDictionary = sequenceDictionary;
         this.formatSpec = formatSpec.clone();
-    }
-
-    public FixedTabixIndexCreator(final TabixFormat formatSpec) {
-        this(null, formatSpec);
     }
 
     @Override
     public void addFeature(final Feature feature, final long filePosition) {
         final String sequenceName = feature.getContig();
-        final int referenceIndex;
-        if (sequenceName.equals(currentSequenceName)) {
-            referenceIndex = sequenceNames.size() - 1;
+        final int referenceIndex = sequenceDictionary.getSequenceIndex(sequenceName);
+        boolean advance = false;
+        if (currentReferenceIndex == -1) {
+            for (int i = 0; i < referenceIndex; i++) { // add nulls if not 0th referenceIndex
+                indexContents.add(null);
+            }
+            currentReferenceIndex = referenceIndex;
+            advance = true;
         } else {
-            referenceIndex = sequenceNames.size();
-            if (currentSequenceName != null && sequenceNamesSeen.contains(sequenceName)) {
-                throw new IllegalArgumentException("Sequence " + feature + " added out sequence of order");
+            if (referenceIndex == currentReferenceIndex + 1) {
+                advance = true;
+            }
+            if (referenceIndex != currentReferenceIndex && referenceIndex != currentReferenceIndex + 1) {
+                throw new IllegalArgumentException("Sequence " + feature + " added out of order" + (" currentReferenceIndex: " + currentReferenceIndex + ", referenceIndex:" + referenceIndex));
             }
         }
         final TabixFeature thisFeature = new TabixFeature(referenceIndex, feature.getStart(), feature.getEnd(), filePosition);
@@ -96,8 +96,8 @@ public class FixedTabixIndexCreator implements IndexCreator {
             finalizeFeature(filePosition);
         }
         previousFeature = thisFeature;
-        if (referenceIndex == sequenceNames.size()) {
-            advanceToReference(sequenceName);
+        if (advance) {
+            advanceToReference(referenceIndex);
         }
     }
 
@@ -110,21 +110,19 @@ public class FixedTabixIndexCreator implements IndexCreator {
         indexBuilder.processFeature(previousFeature);
     }
 
-    private void advanceToReference(final String sequenceName) {
+    private void advanceToReference(final int referenceIndex) {
         if (indexBuilder != null) {
             indexContents.add(indexBuilder.generateIndexContent());
         }
         // If sequence dictionary is provided, BinningIndexBuilder can reduce size of array it allocates.
         final int sequenceLength;
         if (sequenceDictionary != null) {
-            sequenceLength = sequenceDictionary.getSequence(sequenceName).getSequenceLength();
+            sequenceLength = sequenceDictionary.getSequence(referenceIndex).getSequenceLength();
         } else {
             sequenceLength = 0;
         }
-        indexBuilder = new BinningIndexBuilder(sequenceNames.size(), sequenceLength);
-        sequenceNames.add(sequenceName);
-        currentSequenceName = sequenceName;
-        sequenceNamesSeen.add(sequenceName);
+        indexBuilder = new BinningIndexBuilder(referenceIndex, sequenceLength);
+        currentReferenceIndex = referenceIndex;
     }
 
     @Override
@@ -138,7 +136,8 @@ public class FixedTabixIndexCreator implements IndexCreator {
         // Make this as big as the sequence dictionary, even if there is not content for every sequence,
         // but truncate the sequence dictionary before its end if there are sequences in the sequence dictionary without
         // any features.
-        final BinningIndexContent[] indices = indexContents.toArray(new BinningIndexContent[sequenceNames.size()]);
+        final BinningIndexContent[] indices = indexContents.toArray(new BinningIndexContent[sequenceDictionary.size()]);
+        List<String> sequenceNames = sequenceDictionary.getSequences().stream().map(SAMSequenceRecord::getSequenceName).collect(Collectors.toList());
         return new TabixIndex(formatSpec, sequenceNames, indices);
     }
 
