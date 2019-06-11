@@ -11,6 +11,7 @@ public class CachingBAMFileIndexOptimized extends CachingBAMFileIndex {
     super(stream, dictionary);
   }
 
+  @Override
   protected BAMIndexContent query(final int referenceSequence, final int startPos, final int endPos) {
     seek(4);
 
@@ -31,7 +32,8 @@ public class CachingBAMFileIndexOptimized extends CachingBAMFileIndex {
     return super.query(referenceSequence, startPos, endPos);
   }
 
-  private void skipToSequence(final int sequenceIndex) {
+  @Override
+  protected void skipToSequence(final int sequenceIndex) {
     //Use sequence position cache if available
     if(sequenceIndexes[sequenceIndex] != -1){
       seek(sequenceIndexes[sequenceIndex]);

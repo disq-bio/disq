@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq.impl.formats.cram;
 
-import htsjdk.samtools.CRAMContainerStreamWriter2;
+import htsjdk.samtools.CRAMContainerStreamWriter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.cram.CRAIIndex;
@@ -134,8 +134,8 @@ public class CramSink extends AbstractSamSink {
       OutputStream out,
       String headerFile,
       CRAMReferenceSource referenceSource) {
-    CRAMContainerStreamWriter2 cramWriter =
-        new CRAMContainerStreamWriter2(out, null, referenceSource, header, headerFile);
+    CRAMContainerStreamWriter cramWriter =
+        new CRAMContainerStreamWriter(out, null, referenceSource, header, headerFile);
     cramWriter.writeHeader(header);
     cramWriter.finish(false); // don't write terminator
   }

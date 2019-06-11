@@ -25,7 +25,8 @@
  */
 package org.disq_bio.disq.impl.formats.cram;
 
-import htsjdk.samtools.CRAMContainerStreamWriter2;
+import htsjdk.samtools.CRAMCRAIIndexer;
+import htsjdk.samtools.CRAMContainerStreamWriter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.cram.CRAIIndex;
@@ -83,7 +84,7 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
   static class CramRecordWriter extends RecordWriter<Void, SAMRecord> {
 
     private final OutputStream out;
-    private final CRAMContainerStreamWriter2 cramWriter;
+    private final CRAMContainerStreamWriter cramWriter;
 
     public CramRecordWriter(
         Configuration conf,
@@ -103,8 +104,12 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
         indexStream = null;
       }
       cramWriter =
-          new CRAMContainerStreamWriter2(
-              out, indexStream, referenceSource, header, file.toString());
+          new CRAMContainerStreamWriter(
+              out,
+              referenceSource,
+              header,
+              file.toString(),
+              indexStream == null ? null : new CRAMCRAIIndexer(indexStream, header));
     }
 
     @Override

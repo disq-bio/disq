@@ -26,7 +26,7 @@ public class CRAIIndexMerger extends IndexMerger<CRAIIndex> {
   }
 
   private static CRAIEntry shift(CRAIEntry entry, long offset) {
-    return new CRAIEntry(entry.getSequenceId(), entry.getAlignmentStart(), entry.getAlignmentSpan(), entry.getContainerStartByteOffset() + offset, entry.getSliceByteOffset(), entry.getSliceByteSize());
+    return new CRAIEntry(entry.getSequenceId(), entry.getAlignmentStart(), entry.getAlignmentSpan(), entry.getContainerStartByteOffset() + offset, entry.getSliceByteOffsetFromCompressionHeaderStart(), entry.getSliceByteSize());
   }
 
   @Override
