@@ -31,6 +31,9 @@ public class TabixPlainText {
   public static void dump(PrintWriter pw, TabixIndex tbi) {
     BinningIndexContent[] binningIndexContents = TabixIndexMerger.getBinningIndexContents(tbi);
     for (BinningIndexContent content : binningIndexContents) {
+      if (content == null) {
+        continue;
+      }
       writeReference(pw, content);
     }
   }

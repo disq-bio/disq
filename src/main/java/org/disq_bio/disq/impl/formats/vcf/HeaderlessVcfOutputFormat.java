@@ -25,8 +25,8 @@
  */
 package org.disq_bio.disq.impl.formats.vcf;
 
+import htsjdk.tribble.index.IndexCreator;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.writer.VCFWriterHelper;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -63,7 +63,7 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
             "Cannot create tabix index for file that is not block compressed.");
       }
       OutputStream out = file.getFileSystem(conf).create(file);
-      TabixIndexCreator tabixIndexCreator;
+      IndexCreator tabixIndexCreator;
       if (tbiFile == null) {
         tabixIndexCreator = null;
       } else {

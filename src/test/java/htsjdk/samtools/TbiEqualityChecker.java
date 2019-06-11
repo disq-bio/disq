@@ -89,7 +89,7 @@ public class TbiEqualityChecker {
     Assert.assertEquals(
         "Number of non-null bins", bins1.getNumberOfNonNullBins(), bins2.getNumberOfNonNullBins());
     for (int i = 0; i <= bins1.maxBinNumber; i++) {
-      assertEquals(bins1.getBin(i), bins2.getBin(i), identical || i != bins1.maxBinNumber);
+      assertEquals(bins1.getBin(i), bins2.getBin(i), identical);
     }
   }
 

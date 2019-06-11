@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Merges BAM index files for (headerless) parts of a BAM file into a single
@@ -93,12 +94,15 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
    */
   public static BinningIndexContent.BinList mergeBins(List<BinningIndexContent.BinList> binLists, long[] offsets) {
     List<Bin> mergedBins = new ArrayList<>();
-    int maxBinNumber = binLists.stream().mapToInt(bl -> bl.maxBinNumber).max().orElse(0);
+    int maxBinNumber = binLists.stream().filter(Objects::nonNull).mapToInt(bl -> bl.maxBinNumber).max().orElse(0);
     int commonNonNullBins = 0;
     for (int i = 0; i <= maxBinNumber; i++) {
       List<Bin> nonNullBins = new ArrayList<>();
       for (int j = 0; j < binLists.size(); j++) {
         BinningIndexContent.BinList binList = binLists.get(j);
+        if (binList == null) {
+          continue;
+        }
         Bin bin = VirtualShiftUtil.shift(binList.getBin(i), offsets[j]);
         if (bin != null) {
           nonNullBins.add(bin);
@@ -110,7 +114,7 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
       }
     }
     int numberOfNonNullBins =
-        binLists.stream().mapToInt(BinningIndexContent.BinList::getNumberOfNonNullBins).sum() - commonNonNullBins;
+        binLists.stream().filter(Objects::nonNull).mapToInt(BinningIndexContent.BinList::getNumberOfNonNullBins).sum() - commonNonNullBins;
     return new BinningIndexContent.BinList(mergedBins.toArray(new Bin[0]), numberOfNonNullBins);
   }
 
@@ -209,6 +213,9 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
   public static LinearIndex mergeLinearIndexes(int referenceSequence, List<LinearIndex> linearIndexes, long[] offsets) {
     int maxIndex = -1;
     for (LinearIndex li : linearIndexes) {
+      if (li == null) {
+        continue;
+      }
       if (li.getIndexStart() != 0) {
         throw new IllegalArgumentException("Cannot merge linear indexes that don't all start at zero");
       }
@@ -223,6 +230,9 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
     for (int i = 0; i < maxIndex; i++) {
       for (int liIndex = 0; liIndex < linearIndexes.size(); liIndex++) {
         LinearIndex li = linearIndexes.get(liIndex);
+        if (li == null) {
+          continue;
+        }
         long[] indexEntries = li.getIndexEntries();
         // Use the first linear index that has an index entry at position i.
         // There is no need to check later linear indexes, since their entries
