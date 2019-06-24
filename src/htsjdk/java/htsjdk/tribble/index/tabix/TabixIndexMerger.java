@@ -106,8 +106,8 @@ public class TabixIndexMerger extends IndexMerger<TabixIndex> {
     List<BinningIndexContent.BinList> binLists = new ArrayList<>();
     List<LinearIndex> linearIndexes = new ArrayList<>();
     for (BinningIndexContent binningIndexContent : binningIndexContentList) {
-      binLists.add(binningIndexContent.getBins());
-      linearIndexes.add(binningIndexContent.getLinearIndex());
+      binLists.add(binningIndexContent == null ? null : binningIndexContent.getBins());
+      linearIndexes.add(binningIndexContent == null ? null : binningIndexContent.getLinearIndex());
     }
     return new BinningIndexContent(referenceSequence, BAMIndexMerger.mergeBins(binLists, offsets), BAMIndexMerger.mergeLinearIndexes(referenceSequence, linearIndexes, offsets));
   }

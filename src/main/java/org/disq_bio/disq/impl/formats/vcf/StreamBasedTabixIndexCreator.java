@@ -29,9 +29,9 @@ import htsjdk.samtools.BinningIndexContent;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
 import htsjdk.tribble.index.Index;
+import htsjdk.tribble.index.tabix.AllRefsTabixIndexCreator;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.tribble.index.tabix.TabixIndex;
-import htsjdk.tribble.index.tabix.TabixIndexCreator;
 import htsjdk.tribble.index.tabix.TabixIndexMerger;
 import htsjdk.tribble.util.LittleEndianOutputStream;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.util.List;
 
 // TODO: enhance htsjdk so that it's possible to write a tabix index to a stream (not just a path)
 // see IndexingVariantContextWriter, which calls writeBasedOnFeaturePath
-public class StreamBasedTabixIndexCreator extends TabixIndexCreator {
+public class StreamBasedTabixIndexCreator extends AllRefsTabixIndexCreator {
 
   static class StreamBasedTabixIndex extends TabixIndex {
     private final OutputStream out;
