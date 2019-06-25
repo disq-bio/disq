@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Merges BAM index files for (headerless) parts of a BAM file into a single
@@ -18,8 +19,8 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
 
   private static final int UNINITIALIZED_WINDOW = -1;
 
-  private int numReferences;
-  private final List<List<BAMIndexContent>> content = new ArrayList<>();
+  private int numReferences = -1;
+  private List<AbstractBAMFileIndex> indexes = new ArrayList<>();
   private long noCoordinateCount;
 
   public BAMIndexMerger(final OutputStream out, final long headerLength) {
@@ -29,26 +30,22 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
   @Override
   public void processIndex(AbstractBAMFileIndex index, long partLength) {
     this.partLengths.add(partLength);
-    if (content.isEmpty()) {
+    if (numReferences == -1) {
       numReferences = index.getNumberOfReferences();
-      for (int ref = 0; ref < numReferences; ref++) {
-        content.add(new ArrayList<>());
-      }
     }
     if (index.getNumberOfReferences() != numReferences) {
       throw new IllegalArgumentException(
           String.format("Cannot merge BAI files with different number of references, %s and %s.", numReferences, index.getNumberOfReferences()));
     }
-    for (int ref = 0; ref < numReferences; ref++) {
-      List<BAMIndexContent> bamIndexContentList = content.get(ref);
-      bamIndexContentList.add(index.getQueryResults(ref));
-    }
+    // just store the indexes rather than computing the BAMIndexContent for each ref,
+    // since there may be thousands of refs and indexes, each with thousands of bins
+    indexes.add(index);
     noCoordinateCount += index.getNoCoordinateCount();
   }
 
   @Override
   public void finish(long dataFileLength) {
-    if (content.isEmpty()) {
+    if (indexes.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero BAI files");
     }
     long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
@@ -57,7 +54,8 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
     try (BinaryBAMIndexWriter writer =
              new BinaryBAMIndexWriter(numReferences, out)) {
       for (int ref = 0; ref < numReferences; ref++) {
-        List<BAMIndexContent> bamIndexContentList = content.get(ref);
+        final int r = ref;
+        List<BAMIndexContent> bamIndexContentList = indexes.stream().map(index -> index.getQueryResults(r)).collect(Collectors.toList());
         BAMIndexContent bamIndexContent = mergeBAMIndexContent(ref, bamIndexContentList, offsets);
         writer.writeReference(bamIndexContent);
       }
