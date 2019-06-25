@@ -86,8 +86,7 @@ public class BaiMergingTest extends BaseTest {
   public void test(String inputFile) throws Exception {
     String inputPath = getPath(inputFile);
 
-    long inputFileLength = new File(inputPath).length();
-    int splitSize = (int) (inputFileLength + 1) / 3; // three part files
+    int splitSize = 64 * 1024; // have a small split size (64K) to test effect of lots of splits
     HtsjdkReadsRddStorage htsjdkReadsRddStorage =
         HtsjdkReadsRddStorage.makeDefault(jsc)
             .splitSize(splitSize)
