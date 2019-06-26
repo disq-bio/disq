@@ -64,7 +64,7 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
   }
 
   public static AbstractBAMFileIndex openIndex(SeekableStream stream, SAMSequenceDictionary dictionary) {
-    return new CachingBAMFileIndex(stream, dictionary);
+    return new CachingBAMFileIndexOptimized(stream, dictionary);
   }
 
   private static BAMIndexContent mergeBAMIndexContent(int referenceSequence,
@@ -73,9 +73,15 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
     List<BAMIndexMetaData> metaDataList = new ArrayList<>();
     List<LinearIndex> linearIndexes = new ArrayList<>();
     for (BAMIndexContent bamIndexContent : bamIndexContentList) {
-      binLists.add(bamIndexContent.getBins());
-      metaDataList.add(bamIndexContent.getMetaData());
-      linearIndexes.add(bamIndexContent.getLinearIndex());
+      if (bamIndexContent == null) {
+        binLists.add(null);
+        metaDataList.add(null);
+        linearIndexes.add(null);
+      } else {
+        binLists.add(bamIndexContent.getBins());
+        metaDataList.add(bamIndexContent.getMetaData());
+        linearIndexes.add(bamIndexContent.getLinearIndex());
+      }
     }
     return new BAMIndexContent(
         referenceSequence,
@@ -166,6 +172,9 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
   private static BAMIndexMetaData mergeMetaData(List<BAMIndexMetaData> metaDataList, long[] offsets) {
     List<BAMIndexMetaData> newMetadataList = new ArrayList<>();
     for (int i = 0; i < metaDataList.size(); i++) {
+      if (metaDataList.get(i) == null) {
+        continue;
+      }
       newMetadataList.add(VirtualShiftUtil.shift(metaDataList.get(i), offsets[i]));
     }
     return mergeMetaData(newMetadataList);
@@ -220,7 +229,7 @@ public class BAMIndexMerger extends IndexMerger<AbstractBAMFileIndex> {
       maxIndex = Math.max(maxIndex, li.size());
     }
     if (maxIndex == -1) {
-      throw new IllegalArgumentException("Error merging linear indexes");
+      return new LinearIndex(referenceSequence, 0, new long[0]);
     }
 
     long[] entries = new long[maxIndex];
