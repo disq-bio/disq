@@ -14,13 +14,14 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** Merges tabix files for parts of a file that have been concatenated. */
 public class TabixIndexMerger extends IndexMerger<TabixIndex> {
 
   private TabixFormat formatSpec;
   private final List<String> sequenceNames = new ArrayList<>();
-  private final List<List<BinningIndexContent>> content = new ArrayList<>();
+  private List<TabixIndex> indexes = new ArrayList<>();
 
   public TabixIndexMerger(final OutputStream out, final long headerLength) {
     super(out, headerLength);
@@ -29,13 +30,10 @@ public class TabixIndexMerger extends IndexMerger<TabixIndex> {
   @Override
   public void processIndex(TabixIndex index, long partLength) {
     this.partLengths.add(partLength);
-    if (content.isEmpty()) {
+    if (indexes.isEmpty()) {
       formatSpec = index.getFormatSpec();
       if (index.getSequenceNames() != null) {
         sequenceNames.addAll(index.getSequenceNames());
-      }
-      for (int ref = 0; ref < sequenceNames.size(); ref++) {
-        content.add(new ArrayList<>());
       }
     }
     if (!index.getFormatSpec().equals(formatSpec)) {
@@ -46,15 +44,12 @@ public class TabixIndexMerger extends IndexMerger<TabixIndex> {
       throw new IllegalArgumentException(
           String.format("Cannot merge tabix files with different sequence names, %s and %s.", index.getSequenceNames(), sequenceNames));
     }
-    for (int ref = 0; ref < sequenceNames.size(); ref++) {
-      List<BinningIndexContent> binningIndexContentList = content.get(ref);
-      binningIndexContentList.add(getBinningIndexContent(index, ref));
-    }
+    indexes.add(index);
   }
 
   @Override
   public void finish(long dataFileLength) throws IOException {
-    if (content.isEmpty()) {
+    if (indexes.isEmpty()) {
       throw new IllegalArgumentException("Cannot merge zero tabix files");
     }
     long[] offsets = partLengths.stream().mapToLong(i -> i).toArray();
@@ -62,7 +57,8 @@ public class TabixIndexMerger extends IndexMerger<TabixIndex> {
 
     List<BinningIndexContent> mergedBinningIndexContentList = new ArrayList<>();
     for (int ref = 0; ref < sequenceNames.size(); ref++) {
-      List<BinningIndexContent> binningIndexContentList = content.get(ref);
+      final int r = ref;
+      List<BinningIndexContent> binningIndexContentList = indexes.stream().map(index -> getBinningIndexContent(index, r)).collect(Collectors.toList());
       BinningIndexContent binningIndexContent = mergeBinningIndexContent(ref, binningIndexContentList, offsets);
       mergedBinningIndexContentList.add(binningIndexContent);
     }
