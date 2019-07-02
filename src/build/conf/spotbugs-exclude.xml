@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
     <Match>
+        <!-- Java 11 false positive -->
+        <!-- https://github.com/spotbugs/spotbugs/issues/756 -->
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE" />
+    </Match>
+    <Match>
+        <!-- Java 11 false positive -->
+        <!-- https://github.com/spotbugs/spotbugs/issues/756 -->
+        <Or>
+            <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE" />
+            <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+            <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE" />
+        </Or>
+        <Class name="org.disq_bio.disq.impl.formats.cram.CramSource"/>
+    </Match>
+    <Match>
         <Class name="org.disq_bio.disq.impl.file.SeekableByteChannelPrefetcher"/>
     </Match>
     <Match>
