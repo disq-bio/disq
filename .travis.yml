@@ -9,7 +9,8 @@ matrix:
     - jdk: openjdk11
       env: JAVA_RELEASE=11 JAVA_VERSION=11 SCALA_VERSION=2.12
 env:
-  - NO_GCE_CHECK=true
+  global:
+    - NO_GCE_CHECK=true
 script:
   - mvn -B verify -Djava.release=$JAVA_RELEASE -Djava.version=$JAVA_VERSION -Dscala.version=$SCALA_VERSION -Ddisq.test.real.world.files.dir=$TRAVIS_BUILD_DIR/gatk/src/test/resources/large -Ddisq.test.real.world.files.ref=$TRAVIS_BUILD_DIR/gatk/src/test/resources/large/human_g1k_v37.20.21.fasta -Ddisq.samtools.bin=/usr/bin/samtools -Ddisq.bcftools.bin=/usr/bin/bcftools
 cache:
