@@ -27,6 +27,7 @@ package org.disq_bio.disq;
 
 import htsjdk.samtools.BAMSBIIndexer;
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.seekablestream.SeekablePathStream;
 import htsjdk.samtools.seekablestream.SeekableStream;
@@ -44,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.spark.api.java.JavaRDD;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -255,6 +257,55 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     // check we can read back what we've just written
     Assert.assertEquals(expectedCount, htsjdkReadsRddStorage.read(outputPath).getReads().count());
+  }
+
+  protected Object[] parametersForTestReadAndWriteSubset() {
+    return new Object[][] {
+      {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, false},
+      {"1.bam", null, ReadsFormatWriteOption.BAM, 128 * 1024, true},
+    };
+  }
+
+  @Test
+  @Parameters
+  public void testReadAndWriteSubset(
+      String inputFile,
+      String cramReferenceFile,
+      ReadsFormatWriteOption formatWriteOption,
+      int splitSize,
+      boolean useNio)
+      throws Exception {
+
+    Assume.assumeTrue(inputFileMatches(inputFile));
+
+    String inputPath = getPath(inputFile);
+    String refPath = getPath(cramReferenceFile);
+
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage =
+        HtsjdkReadsRddStorage.makeDefault(jsc)
+            .splitSize(splitSize)
+            .useNio(useNio)
+            .referenceSourcePath(refPath);
+
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+
+    // filter the RDD so it contains a single read
+    SAMRecord firstRead = htsjdkReadsRdd.getReads().first();
+    Assert.assertNotNull(firstRead);
+    JavaRDD<SAMRecord> filteredReads =
+        htsjdkReadsRdd.getReads().filter(read -> read.equals(firstRead));
+
+    // write the filtered RDD back to a file
+    String outputPath =
+        createTempPath(SamFormat.fromFormatWriteOption(formatWriteOption).getExtension());
+    htsjdkReadsRddStorage.write(
+        new HtsjdkReadsRdd(htsjdkReadsRdd.getHeader(), filteredReads), outputPath);
+
+    // check the new file has the number of expected reads
+    Assert.assertEquals(1, AnySamTestUtil.countReads(outputPath, refPath));
+
+    // check we can read back what we've just written
+    Assert.assertEquals(1, htsjdkReadsRddStorage.read(outputPath).getReads().count());
   }
 
   private Object[] parametersForTestReadIntervals() {

@@ -43,6 +43,7 @@ public class Merger {
       throws IOException {
     List<String> parts =
         fileStatuses.stream()
+            .filter(fileStatus -> fileStatus.getLength() > 0)
             .map(FileSystemWrapper.FileStatus::getPath)
             .collect(Collectors.toList());
     fileSystemWrapper.concat(conf, parts, outputFile);
@@ -50,9 +51,14 @@ public class Merger {
 
   public void mergeParts(Configuration conf, String tempPartsDirectory, String outputFile)
       throws IOException {
-    List<String> parts = fileSystemWrapper.listDirectory(conf, tempPartsDirectory);
+    List<FileSystemWrapper.FileStatus> parts =
+        fileSystemWrapper.listDirectoryStatus(conf, tempPartsDirectory);
     List<String> filteredParts =
-        parts.stream().filter(new HiddenFileFilter()).collect(Collectors.toList());
+        parts.stream()
+            .filter(fileStatus -> fileStatus.getLength() > 0)
+            .map(FileSystemWrapper.FileStatus::getPath)
+            .filter(new HiddenFileFilter())
+            .collect(Collectors.toList());
     fileSystemWrapper.concat(conf, filteredParts, outputFile);
   }
 }
