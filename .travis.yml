@@ -18,3 +18,5 @@ before_install:
   - src/build/bin/install-samtools.sh
   - src/build/bin/install-bcftools.sh
   - src/build/bin/checkout-gatk-large-files.sh
+after_success:
+  - '[[ $TRAVIS_BRANCH == "master" ]] && { mvn deploy --settings src/build/travis/settings.xml -DskipTests=true -B ; };'
