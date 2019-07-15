@@ -13,4 +13,4 @@ cache:
   directories:
     - $HOME/.m2
 after_success:
-  - '{ mvn deploy --settings src/build/travis/settings.xml -DskipTests=true -B ; };'
+  - '{ echo "TRAVIS_SECURE_ENV_VARS $TRAVIS_SECURE_ENV_VARS"; echo "CI_DEPLOY_USERNAME $CI_DEPLOY_USERNAME"; mvn deploy --settings src/build/travis/settings.xml -DskipTests=true -B ; };'
