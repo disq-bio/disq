@@ -250,7 +250,9 @@ mvn verify \
 
 To perform a release you need commit rights to the repository, a key in the
 `KEYS` file, and an account on [https://oss.sonatype.org/](https://oss.sonatype.org/)
-with permission to write to the `disq-bio` Maven group ID.
+with permission to write to the `disq-bio` Maven group ID. You also need
+update your Maven _~/.m2/settings.xml_ file to include your Sonatype credentials
+as described [here](https://central.sonatype.org/pages/apache-maven.html#distribution-management-and-authentication).
 
 To [perform a snapshot deployment](https://central.sonatype.org/pages/apache-maven.html#performing-a-snapshot-deployment)
 run
@@ -265,6 +267,9 @@ run this first:
 ```
 export GPG_TTY=$(tty)
 ```
+
+If your GitHub account is using two factor authentication then you may need to use
+a token when prompted for a password. See [this article](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
 
 To [perform a release deployment](https://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin)
 run 
