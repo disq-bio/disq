@@ -125,6 +125,7 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     kryo.register(htsjdk.variant.variantcontext.VariantContext.Type.class);
 
     // htsjdk.variant.vcf
+    kryo.register(htsjdk.variant.vcf.VCFAltHeaderLine.class);
     kryo.register(htsjdk.variant.vcf.VCFCompoundHeaderLine.SupportedHeaderLineType.class);
     kryo.register(htsjdk.variant.vcf.VCFContigHeaderLine.class);
     kryo.register(htsjdk.variant.vcf.VCFFilterHeaderLine.class);
@@ -133,7 +134,11 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     kryo.register(htsjdk.variant.vcf.VCFHeaderLine.class);
     kryo.register(htsjdk.variant.vcf.VCFHeaderLineCount.class);
     kryo.register(htsjdk.variant.vcf.VCFHeaderLineType.class);
+    kryo.register(htsjdk.variant.vcf.VCFHeaderVersion.class);
     kryo.register(htsjdk.variant.vcf.VCFInfoHeaderLine.class);
+    kryo.register(htsjdk.variant.vcf.VCFMetaHeaderLine.class);
+    kryo.register(htsjdk.variant.vcf.VCFPedigreeHeaderLine.class);
+    kryo.register(htsjdk.variant.vcf.VCFSampleHeaderLine.class);
     kryo.register(htsjdk.variant.vcf.VCFSimpleHeaderLine.class);
 
     // java.io
