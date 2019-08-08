@@ -27,8 +27,8 @@ package org.disq_bio.disq;
 
 import com.google.common.io.Files;
 import htsjdk.samtools.util.BlockCompressedInputStream;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.Interval;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import java.io.*;
@@ -43,11 +43,10 @@ public class VcfTestUtil {
       actualVcf = File.createTempFile(vcf.getName(), ".gz");
       actualVcf.deleteOnExit();
       Files.copy(vcf, actualVcf);
-      File tbi = new File(vcf.getParent(), vcf.getName() + TabixUtils.STANDARD_INDEX_EXTENSION);
+      File tbi = new File(vcf.getParent(), vcf.getName() + FileExtensions.TABIX_INDEX);
       if (tbi.exists()) {
         File actualTbi =
-            new File(
-                actualVcf.getParent(), actualVcf.getName() + TabixUtils.STANDARD_INDEX_EXTENSION);
+            new File(actualVcf.getParent(), actualVcf.getName() + FileExtensions.TABIX_INDEX);
         actualTbi.deleteOnExit();
         Files.copy(tbi, actualTbi);
       }

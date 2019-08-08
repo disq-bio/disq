@@ -34,6 +34,7 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
+import org.disq_bio.disq.CraiWriteOption;
 
 /** Merges CRAM index files for (headerless) parts of a CRAM file into a single index file. */
 public class CraiMerger extends IndexFileMerger<CRAIIndex, SAMFileHeader> {
@@ -43,7 +44,7 @@ public class CraiMerger extends IndexFileMerger<CRAIIndex, SAMFileHeader> {
 
   @Override
   protected String getIndexExtension() {
-    return CRAIIndex.CRAI_INDEX_SUFFIX;
+    return CraiWriteOption.getIndexExtension();
   }
 
   @Override

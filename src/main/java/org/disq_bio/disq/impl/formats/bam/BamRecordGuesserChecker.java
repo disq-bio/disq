@@ -30,6 +30,7 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
+import htsjdk.samtools.util.FileExtensions;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -79,7 +80,7 @@ public class BamRecordGuesserChecker implements Serializable {
   }
 
   SBIIndex getSBIIndex(Configuration conf, String bamFile) throws IOException {
-    String sbiFile = bamFile + SBIIndex.FILE_EXTENSION;
+    String sbiFile = bamFile + FileExtensions.SBI;
     if (!fileSystemWrapper.exists(conf, sbiFile)) {
       // create SBI file
       try (SeekableStream in = fileSystemWrapper.open(conf, bamFile);

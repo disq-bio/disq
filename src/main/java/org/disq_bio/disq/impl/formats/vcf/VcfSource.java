@@ -25,9 +25,9 @@
  */
 package org.disq_bio.disq.impl.formats.vcf;
 
-import htsjdk.samtools.SamStreams;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedInputStream;
+import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.samtools.util.OverlapDetector;
 import htsjdk.tribble.FeatureCodecHeader;
@@ -108,7 +108,7 @@ public class VcfSource implements Serializable {
     BufferedInputStream bis = new BufferedInputStream(in);
     // despite the name, SamStreams.isGzippedSAMFile looks for any gzipped stream (including block
     // compressed)
-    return SamStreams.isGzippedSAMFile(bis) ? new GZIPInputStream(bis) : bis;
+    return IOUtil.isGZIPInputStream(bis) ? new GZIPInputStream(bis) : bis;
   }
 
   public <T extends Locatable> JavaRDD<VariantContext> getVariants(

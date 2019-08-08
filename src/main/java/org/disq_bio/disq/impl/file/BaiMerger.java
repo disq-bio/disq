@@ -26,7 +26,6 @@
 package org.disq_bio.disq.impl.file;
 
 import htsjdk.samtools.AbstractBAMFileIndex;
-import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.BAMIndexMerger;
 import htsjdk.samtools.IndexMerger;
 import htsjdk.samtools.SAMFileHeader;
@@ -36,6 +35,7 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
+import org.disq_bio.disq.BaiWriteOption;
 
 /** Merges BAM index files for (headerless) parts of a BAM file into a single index file. */
 public class BaiMerger extends IndexFileMerger<AbstractBAMFileIndex, SAMFileHeader> {
@@ -45,7 +45,7 @@ public class BaiMerger extends IndexFileMerger<AbstractBAMFileIndex, SAMFileHead
 
   @Override
   protected String getIndexExtension() {
-    return BAMIndex.BAMIndexSuffix;
+    return BaiWriteOption.getIndexExtension();
   }
 
   @Override

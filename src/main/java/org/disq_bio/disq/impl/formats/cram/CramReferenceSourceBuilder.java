@@ -32,6 +32,7 @@ import htsjdk.samtools.reference.FastaSequenceIndex;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.GZIIndex;
 import htsjdk.samtools.util.IOUtil;
 import java.io.IOException;
@@ -40,16 +41,14 @@ import org.disq_bio.disq.impl.file.FileSystemWrapper;
 
 /** A utility class for creating a {@link CRAMReferenceSource}. */
 public class CramReferenceSourceBuilder {
-  private static final String FASTA_INDEX_EXTENSION = ".fai";
-
   public static CRAMReferenceSource build(
       FileSystemWrapper fileSystemWrapper, Configuration conf, String referenceSourcePath)
       throws IOException {
     SeekableStream refIn = fileSystemWrapper.open(conf, referenceSourcePath);
-    String indexPath = referenceSourcePath + FASTA_INDEX_EXTENSION;
+    String indexPath = referenceSourcePath + FileExtensions.FASTA_INDEX;
     ReferenceSequenceFile refSeqFile;
     if (IOUtil.hasBlockCompressedExtension(referenceSourcePath)) {
-      String gziIndexPath = referenceSourcePath + GZIIndex.DEFAULT_EXTENSION;
+      String gziIndexPath = referenceSourcePath + FileExtensions.GZI;
       try (SeekableStream indexIn = fileSystemWrapper.open(conf, indexPath);
           SeekableStream gziIndexIn = fileSystemWrapper.open(conf, gziIndexPath)) {
         FastaSequenceIndex index = new FastaSequenceIndex(indexIn);

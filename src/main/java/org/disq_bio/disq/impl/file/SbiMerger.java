@@ -33,6 +33,7 @@ import htsjdk.samtools.seekablestream.SeekableStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.hadoop.conf.Configuration;
+import org.disq_bio.disq.SbiWriteOption;
 
 public class SbiMerger extends IndexFileMerger<SBIIndex, SAMFileHeader> {
 
@@ -42,7 +43,7 @@ public class SbiMerger extends IndexFileMerger<SBIIndex, SAMFileHeader> {
 
   @Override
   protected String getIndexExtension() {
-    return SBIIndex.FILE_EXTENSION;
+    return SbiWriteOption.getIndexExtension();
   }
 
   @Override

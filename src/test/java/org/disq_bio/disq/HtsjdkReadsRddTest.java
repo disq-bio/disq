@@ -31,6 +31,7 @@ import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.seekablestream.SeekablePathStream;
 import htsjdk.samtools.seekablestream.SeekableStream;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.Interval;
 import htsjdk.samtools.util.Locatable;
 import java.io.ByteArrayInputStream;
@@ -180,7 +181,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
     htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.ENABLE);
 
-    Path sbiFile = Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION));
+    Path sbiFile = Paths.get(URI.create(outputPath + FileExtensions.SBI));
     Assert.assertTrue(Files.exists(sbiFile));
     SBIIndex actualSbiIndex = SBIIndex.load(sbiFile);
 
@@ -501,7 +502,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
         createTempPath(SamFormat.fromFormatWriteOption(ReadsFormatWriteOption.BAM).getExtension());
     htsjdkReadsRddStorage.write(htsjdkReadsRdd, outputPath, SbiWriteOption.ENABLE);
 
-    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + SBIIndex.FILE_EXTENSION))));
+    Assert.assertTrue(Files.exists(Paths.get(URI.create(outputPath + FileExtensions.SBI))));
   }
 
   @Test

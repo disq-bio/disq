@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq;
 
-import htsjdk.samtools.SBIIndex;
+import htsjdk.samtools.util.FileExtensions;
 
 /** An option for for enabling or disabling writing SBI files. Disabled by default. */
 public enum SbiWriteOption implements WriteOption {
@@ -44,6 +44,6 @@ public enum SbiWriteOption implements WriteOption {
 
   /** @return the extension for SBI files. */
   public static String getIndexExtension() {
-    return SBIIndex.FILE_EXTENSION;
+    return FileExtensions.SBI;
   }
 }
