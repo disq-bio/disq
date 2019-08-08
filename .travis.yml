@@ -3,9 +3,9 @@ sudo: required
 matrix:
   include:
     - jdk: openjdk8
-      env: JAVA_RELEASE=8 JAVA_VERSION=1.8 SCALA_VERSION=2.11
+      env: JAVA_RELEASE=8 JAVA_VERSION=1.8 SCALA_VERSION=2.11 DEPLOY_SNAPSHOT=false
     - jdk: openjdk11
-      env: JAVA_RELEASE=11 JAVA_VERSION=11 SCALA_VERSION=2.12
+      env: JAVA_RELEASE=11 JAVA_VERSION=11 SCALA_VERSION=2.12 DEPLOY_SNAPSHOT=false
 env:
   global:
     - NO_GCE_CHECK=true
@@ -19,4 +19,4 @@ before_install:
   - src/build/bin/install-bcftools.sh
   - src/build/bin/checkout-gatk-large-files.sh
 after_success:
-  - '[[ $TRAVIS_BRANCH == "master" ]] && { mvn deploy --settings src/build/travis/settings.xml -DskipTests=true -B ; };'
+  - '[[ $TRAVIS_BRANCH == "master" ]] && [[ $DEPLOY_SNAPSHOT == "true" ]] && { mvn deploy --settings src/build/travis/settings.xml -DskipTests=true -B ; };'
