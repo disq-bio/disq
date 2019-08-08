@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq;
 
-import htsjdk.tribble.util.TabixUtils;
+import htsjdk.samtools.util.FileExtensions;
 
 /** An option for for enabling or disabling writing tabix files. Disabled by default. */
 public enum TabixIndexWriteOption implements WriteOption {
@@ -44,6 +44,6 @@ public enum TabixIndexWriteOption implements WriteOption {
 
   /** @return the extension for tabix files. */
   public static String getIndexExtension() {
-    return TabixUtils.STANDARD_INDEX_EXTENSION;
+    return FileExtensions.TABIX_INDEX;
   }
 }

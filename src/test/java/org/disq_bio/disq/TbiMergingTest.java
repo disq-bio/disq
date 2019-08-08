@@ -26,10 +26,10 @@
 package org.disq_bio.disq;
 
 import htsjdk.samtools.TbiEqualityChecker;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.RuntimeIOException;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixIndex;
-import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.vcf.VCFCodec;
 import java.io.File;
 import java.io.IOException;
@@ -84,8 +84,8 @@ public class TbiMergingTest extends BaseTest {
 
     File outputVcf = new File(URI.create(outputPath));
     File outputTbi =
-        new File(outputVcf.getParent(), outputVcf.getName() + TabixUtils.STANDARD_INDEX_EXTENSION);
-    String outputTbiHtsjdkPath = createTempPath(TabixUtils.STANDARD_INDEX_EXTENSION);
+        new File(outputVcf.getParent(), outputVcf.getName() + FileExtensions.TABIX_INDEX);
+    String outputTbiHtsjdkPath = createTempPath(FileExtensions.TABIX_INDEX);
     File outputTbiHtsjdk = indexVcf(outputVcf, new File(URI.create(outputTbiHtsjdkPath)));
 
     // Don't check for strict equality (byte identical), since the TBI files

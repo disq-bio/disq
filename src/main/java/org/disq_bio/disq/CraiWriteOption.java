@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq;
 
-import htsjdk.samtools.cram.CRAIIndex;
+import htsjdk.samtools.util.FileExtensions;
 
 /** An option for for enabling or disabling writing CRAI files. Disabled by default. */
 public enum CraiWriteOption implements WriteOption {
@@ -44,6 +44,6 @@ public enum CraiWriteOption implements WriteOption {
 
   /** @return the extension for CRAI files. */
   public static String getIndexExtension() {
-    return CRAIIndex.CRAI_INDEX_SUFFIX;
+    return FileExtensions.CRAM_INDEX;
   }
 }

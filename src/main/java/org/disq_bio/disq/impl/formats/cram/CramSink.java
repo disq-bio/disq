@@ -28,7 +28,6 @@ package org.disq_bio.disq.impl.formats.cram;
 import htsjdk.samtools.CRAMContainerStreamWriter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.cram.CRAIIndex;
 import htsjdk.samtools.cram.build.CramIO;
 import htsjdk.samtools.cram.common.CramVersions;
 import htsjdk.samtools.cram.ref.CRAMReferenceSource;
@@ -121,7 +120,7 @@ public class CramSink extends AbstractSamSink {
           .mergeParts(
               conf,
               tempPartsDirectory,
-              path + CRAIIndex.CRAI_INDEX_SUFFIX,
+              path + CraiWriteOption.getIndexExtension(),
               header,
               partLengths,
               fileLength);

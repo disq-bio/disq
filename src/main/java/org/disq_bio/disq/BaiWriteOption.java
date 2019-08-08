@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq;
 
-import htsjdk.samtools.BAMIndex;
+import htsjdk.samtools.util.FileExtensions;
 
 /** An option for for enabling or disabling writing BAI files. Disabled by default. */
 public enum BaiWriteOption implements WriteOption {
@@ -44,6 +44,6 @@ public enum BaiWriteOption implements WriteOption {
 
   /** @return the extension for BAI files. */
   public static String getIndexExtension() {
-    return BAMIndex.BAMIndexSuffix;
+    return FileExtensions.BAI_INDEX;
   }
 }

@@ -26,10 +26,8 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.BAMFileWriter;
-import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -122,7 +120,7 @@ public class BamSink extends AbstractSamSink {
           .mergeParts(
               conf,
               tempPartsDirectory,
-              path + SBIIndex.FILE_EXTENSION,
+              path + SbiWriteOption.getIndexExtension(),
               header,
               partLengths,
               fileLength);
@@ -132,7 +130,7 @@ public class BamSink extends AbstractSamSink {
           .mergeParts(
               conf,
               tempPartsDirectory,
-              path + BAMIndex.BAMIndexSuffix,
+              path + BaiWriteOption.getIndexExtension(),
               header,
               partLengths,
               fileLength);

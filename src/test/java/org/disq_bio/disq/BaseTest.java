@@ -25,7 +25,7 @@
  */
 package org.disq_bio.disq;
 
-import htsjdk.samtools.SBIIndex;
+import htsjdk.samtools.util.FileExtensions;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -143,7 +143,7 @@ public abstract class BaseTest {
 
   protected List<String> listSBIIndexFiles(String dir) throws IOException {
     return Files.list(Paths.get(URI.create(dir)))
-        .filter(path -> path.getFileName().toString().endsWith(SBIIndex.FILE_EXTENSION))
+        .filter(path -> path.getFileName().toString().endsWith(FileExtensions.SBI))
         .map(path -> path.toUri().toString())
         .collect(Collectors.toList());
   }

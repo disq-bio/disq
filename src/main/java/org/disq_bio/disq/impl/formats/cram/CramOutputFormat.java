@@ -29,7 +29,6 @@ import htsjdk.samtools.CRAMCRAIIndexer;
 import htsjdk.samtools.CRAMContainerStreamWriter;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.cram.CRAIIndex;
 import htsjdk.samtools.cram.ref.CRAMReferenceSource;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -38,6 +37,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.disq_bio.disq.CraiWriteOption;
 import org.disq_bio.disq.HtsjdkReadsRdd;
 import org.disq_bio.disq.impl.file.FileSystemWrapper;
 import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
@@ -73,7 +73,8 @@ public class CramOutputFormat extends FileOutputFormat<Void, SAMRecord> {
     Path craiFile;
     if (writeCraiFile) {
       // ensure CRAI files are hidden so they don't interfere with merging of part files
-      craiFile = new Path(file.getParent(), "." + file.getName() + CRAIIndex.CRAI_INDEX_SUFFIX);
+      craiFile =
+          new Path(file.getParent(), "." + file.getName() + CraiWriteOption.getIndexExtension());
     } else {
       craiFile = null;
     }

@@ -38,6 +38,7 @@ import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
 import htsjdk.samtools.util.CloseableIterator;
+import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.Locatable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -95,7 +96,7 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
       String referenceSourcePath)
       throws IOException {
 
-    String sbiPath = path + SBIIndex.FILE_EXTENSION;
+    String sbiPath = path + FileExtensions.SBI;
     if (fileSystemWrapper.exists(jsc.hadoopConfiguration(), sbiPath)) {
       logger.debug("Using SBI file {} for finding splits", sbiPath);
       try (SeekableStream sbiStream = fileSystemWrapper.open(jsc.hadoopConfiguration(), sbiPath)) {

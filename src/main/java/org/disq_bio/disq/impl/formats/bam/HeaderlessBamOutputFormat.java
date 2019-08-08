@@ -26,7 +26,6 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.BAMFileSpan;
-import htsjdk.samtools.BAMIndex;
 import htsjdk.samtools.BAMIndexer2;
 import htsjdk.samtools.BAMRecordCodec;
 import htsjdk.samtools.Chunk;
@@ -34,7 +33,6 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMFileSource;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMRecordHelper;
-import htsjdk.samtools.SBIIndex;
 import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.BinaryCodec;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
@@ -45,7 +43,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.disq_bio.disq.BaiWriteOption;
 import org.disq_bio.disq.HtsjdkReadsRdd;
+import org.disq_bio.disq.SbiWriteOption;
 import org.disq_bio.disq.impl.formats.bgzf.TerminatorlessBlockCompressedOutputStream;
 
 /**
@@ -176,13 +176,15 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
     Path sbiFile;
     if (writeSbiFile) {
       // ensure sbi files are hidden so they don't interfere with merging of part files
-      sbiFile = new Path(file.getParent(), "." + file.getName() + SBIIndex.FILE_EXTENSION);
+      sbiFile =
+          new Path(file.getParent(), "." + file.getName() + SbiWriteOption.getIndexExtension());
     } else {
       sbiFile = null;
     }
     Path baiFile;
     if (writeBaiFile) {
-      baiFile = new Path(file.getParent(), "." + file.getName() + BAMIndex.BAMIndexSuffix);
+      baiFile =
+          new Path(file.getParent(), "." + file.getName() + BaiWriteOption.getIndexExtension());
     } else {
       baiFile = null;
     }
