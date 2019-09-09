@@ -2,8 +2,6 @@ language: java
 sudo: required
 matrix:
   include:
-    - jdk: oraclejdk8
-      env: JAVA_RELEASE=8 JAVA_VERSION=1.8 SCALA_VERSION=2.11
     - jdk: openjdk8
       env: JAVA_RELEASE=8 JAVA_VERSION=1.8 SCALA_VERSION=2.11
     - jdk: openjdk11
