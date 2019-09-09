@@ -35,9 +35,13 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.disq_bio.disq.impl.formats.vcf.VcfFormat;
 import org.disq_bio.disq.impl.formats.vcf.VcfSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** The entry point for reading or writing a {@link HtsjdkVariantsRdd}. */
 public class HtsjdkVariantsRddStorage {
+
+  private static final Logger logger = LoggerFactory.getLogger(HtsjdkVariantsRddStorage.class);
 
   private JavaSparkContext sparkContext;
   private int splitSize;
@@ -122,6 +126,8 @@ public class HtsjdkVariantsRddStorage {
       } else if (writeOption instanceof TabixIndexWriteOption
           && writeOption == TabixIndexWriteOption.ENABLE) {
         indexesToEnable.add(TabixIndexWriteOption.getIndexExtension());
+      } else {
+        logger.warn("Unrecognized write option: {}", writeOption);
       }
     }
 

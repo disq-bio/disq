@@ -40,9 +40,13 @@ import org.disq_bio.disq.impl.file.HadoopFileSystemWrapper;
 import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.sam.AbstractSamSource;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** The entry point for reading or writing a {@link HtsjdkReadsRdd}. */
 public class HtsjdkReadsRddStorage {
+
+  private static final Logger logger = LoggerFactory.getLogger(HtsjdkReadsRddStorage.class);
 
   private JavaSparkContext sparkContext;
   private int splitSize;
@@ -199,6 +203,8 @@ public class HtsjdkReadsRddStorage {
         indexesToEnable.add(CraiWriteOption.getIndexExtension());
       } else if (writeOption instanceof SbiWriteOption && writeOption == SbiWriteOption.ENABLE) {
         indexesToEnable.add(SbiWriteOption.getIndexExtension());
+      } else {
+        logger.warn("Unrecognized write option: {}", writeOption);
       }
     }
 
