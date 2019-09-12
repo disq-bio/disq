@@ -550,4 +550,24 @@ public class HtsjdkReadsRddTest extends BaseTest {
     Assert.assertTrue(
         Files.exists(Paths.get(URI.create(outputPath + SbiWriteOption.getIndexExtension()))));
   }
+
+  @Test
+  public void testCorruptedReadNameSAM() throws Exception {
+    String inputPath = getPath("small.sam");
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage = HtsjdkReadsRddStorage.makeDefault(jsc);
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+    SAMRecord record = htsjdkReadsRdd.getReads().first();
+    Assert.assertEquals("1", record.getReferenceName());
+    Assert.assertEquals(26472784, record.getStart());
+    Assert.assertEquals("simread:1:26472783:false", record.getReadName());
+  }
+
+  @Test
+  public void testCorruptedHeaderSAM() throws Exception {
+    String inputPath = getPath("flag-values.sam");
+    HtsjdkReadsRddStorage htsjdkReadsRddStorage = HtsjdkReadsRddStorage.makeDefault(jsc);
+    HtsjdkReadsRdd htsjdkReadsRdd = htsjdkReadsRddStorage.read(inputPath);
+    SAMRecord record = htsjdkReadsRdd.getReads().first();
+    Assert.assertEquals("read:0", record.getReadName());
+  }
 }
