@@ -34,7 +34,7 @@
         <java.version>1.8</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-        <htsjdk.version>2.20.3-6-gae0d3b6-SNAPSHOT</htsjdk.version>
+        <htsjdk.version>2.21.0</htsjdk.version>
         <hadoop.version>2.7.5</hadoop.version>
         <mockito.version>2.22.0</mockito.version>
         <kryo-serializers.version>0.42</kryo-serializers.version>
@@ -42,13 +42,6 @@
         <scala.version>2.11</scala.version>
         <spark.version>2.4.3</spark.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>broad-repo</id>
-            <url>https://broadinstitute.jfrog.io/broadinstitute/libs-snapshot/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
