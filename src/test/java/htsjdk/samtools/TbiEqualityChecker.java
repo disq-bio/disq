@@ -32,7 +32,6 @@ import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixIndex;
-import htsjdk.tribble.index.tabix.TabixIndexMerger;
 import java.io.File;
 import java.io.IOException;
 import org.junit.Assert;
@@ -66,8 +65,8 @@ public class TbiEqualityChecker {
 
     int numReferences = tbi1.getSequenceNames().size();
     for (int i = 0; i < numReferences; i++) {
-      BinningIndexContent binningIndexContent1 = TabixIndexMerger.getBinningIndexContent(tbi1, i);
-      BinningIndexContent binningIndexContent2 = TabixIndexMerger.getBinningIndexContent(tbi2, i);
+      BinningIndexContent binningIndexContent1 = tbi1.getIndices()[i];
+      BinningIndexContent binningIndexContent2 = tbi2.getIndices()[i];
       assertEquals(binningIndexContent1, binningIndexContent2, identical);
     }
   }

@@ -26,10 +26,12 @@
 package org.disq_bio.disq.impl.formats.vcf;
 
 import htsjdk.tribble.index.IndexCreator;
+import htsjdk.tribble.index.tabix.StreamBasedTabixIndexCreator;
 import htsjdk.tribble.index.tabix.TabixFormat;
 import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.variantcontext.writer.VCFWriterHelper;
+import htsjdk.variant.variantcontext.writer.Options;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
 import htsjdk.variant.vcf.VCFHeader;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -73,11 +75,16 @@ public class HeaderlessVcfOutputFormat extends FileOutputFormat<Void, VariantCon
                 header.getSequenceDictionary(), TabixFormat.VCF, tbiOut);
       }
       this.variantContextWriter =
-          VCFWriterHelper.buildVCFWriter(
-              blockCompress ? new TerminatorlessBlockCompressedOutputStream(out) : out,
-              header.getSequenceDictionary(),
-              tabixIndexCreator,
-              tbiFile != null);
+          new VariantContextWriterBuilder()
+              .setOutputStream(
+                  blockCompress ? new TerminatorlessBlockCompressedOutputStream(out) : out)
+              .setReferenceDictionary(header.getSequenceDictionary())
+              .setIndexCreator(tabixIndexCreator)
+              .modifyOption(Options.INDEX_ON_THE_FLY, tbiFile != null)
+              .unsetOption(Options.DO_NOT_WRITE_GENOTYPES)
+              .unsetOption(Options.ALLOW_MISSING_FIELDS_IN_HEADER)
+              .unsetOption(Options.WRITE_FULL_FORMAT_FIELD)
+              .build();
       variantContextWriter.setHeader(header);
     }
 

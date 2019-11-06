@@ -26,13 +26,12 @@
 package org.disq_bio.disq.impl.formats.bam;
 
 import htsjdk.samtools.BAMFileSpan;
-import htsjdk.samtools.BAMIndexer2;
+import htsjdk.samtools.BAMIndexer;
 import htsjdk.samtools.BAMRecordCodec;
 import htsjdk.samtools.Chunk;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMFileSource;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMRecordHelper;
 import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.BinaryCodec;
 import htsjdk.samtools.util.BlockCompressedOutputStream;
@@ -66,7 +65,7 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
     private final BinaryCodec binaryCodec;
     private final BAMRecordCodec bamRecordCodec;
     private final SBIIndexWriter sbiIndexWriter;
-    private final BAMIndexer2 bamIndexer;
+    private final BAMIndexer bamIndexer;
 
     private SAMRecord previousSamRecord;
     private Chunk previousSamRecordChunk;
@@ -93,7 +92,8 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
         this.sbiIndexWriter = null;
       }
       if (baiFile != null) {
-        this.bamIndexer = new BAMIndexer2(baiFile.getFileSystem(conf).create(baiFile), header);
+        this.bamIndexer =
+            new BAMIndexer(baiFile.getFileSystem(conf).create(baiFile), header, false);
       } else {
         this.bamIndexer = null;
       }
@@ -104,8 +104,8 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
       if (bamIndexer != null && previousSamRecord != null) {
         // index the previous record since we know it's not the last one (which needs special
         // handling, see the close method)
-        SAMRecordHelper.setFileSource(
-            previousSamRecord, new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
+        previousSamRecord.setFileSource(
+            new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
         bamIndexer.processAlignment(previousSamRecord);
       }
       final long startOffset = compressedOut.getFilePointer();
@@ -139,8 +139,8 @@ public class HeaderlessBamOutputFormat extends FileOutputFormat<Void, SAMRecord>
         if (previousSamRecord != null) {
           previousSamRecordChunk =
               new Chunk(previousSamRecordChunk.getChunkStart(), finalVirtualOffset);
-          SAMRecordHelper.setFileSource(
-              previousSamRecord, new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
+          previousSamRecord.setFileSource(
+              new SAMFileSource(null, new BAMFileSpan(previousSamRecordChunk)));
           bamIndexer.processAlignment(previousSamRecord);
         }
         bamIndexer.finish();
