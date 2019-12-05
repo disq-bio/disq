@@ -120,22 +120,22 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
     } else {
       logger.debug("Using guessing for finding splits");
       SerializableHadoopConfiguration confSer =
-              new SerializableHadoopConfiguration(jsc.hadoopConfiguration());
+          new SerializableHadoopConfiguration(jsc.hadoopConfiguration());
       return bgzfBlockSource
-              .getBgzfBlocks(jsc, path, splitSize)
-              .mapPartitionsWithIndex(
-                      (Function2<Integer, Iterator<BgzfBlockGuesser.BgzfBlock>, Iterator<PathChunk>>)
-                              (partitionIndex, bgzfBlocks) -> {
-                                Configuration conf = confSer.getConf();
-                                PathChunk pathChunk =
-                                        getFirstReadInPartition(conf, bgzfBlocks, stringency, referenceSourcePath);
-                                logger.debug("PathChunk for partition {}: {}", partitionIndex, pathChunk);
-                                if (pathChunk == null) {
-                                  return Collections.emptyIterator();
-                                }
-                                return Collections.singleton(pathChunk).iterator();
-                              },
-                      true);
+          .getBgzfBlocks(jsc, path, splitSize)
+          .mapPartitionsWithIndex(
+              (Function2<Integer, Iterator<BgzfBlockGuesser.BgzfBlock>, Iterator<PathChunk>>)
+                  (partitionIndex, bgzfBlocks) -> {
+                    Configuration conf = confSer.getConf();
+                    PathChunk pathChunk =
+                        getFirstReadInPartition(conf, bgzfBlocks, stringency, referenceSourcePath);
+                    logger.debug("PathChunk for partition {}: {}", partitionIndex, pathChunk);
+                    if (pathChunk == null) {
+                      return Collections.emptyIterator();
+                    }
+                    return Collections.singleton(pathChunk).iterator();
+                  },
+              true);
     }
   }
 
