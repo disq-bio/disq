@@ -149,7 +149,6 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
       ValidationStringency stringency,
       String referenceSourcePath)
       throws IOException {
-    PathChunk pathChunk = null;
     BamRecordGuesser bamRecordGuesser = null;
     try {
       String partitionPath = null;
@@ -182,7 +181,7 @@ public class BamSource extends AbstractBinarySamSource implements Serializable {
         bamRecordGuesser.close();
       }
     }
-    return pathChunk;
+    return null;
   }
 
   private BamRecordGuesser getBamRecordGuesser(
