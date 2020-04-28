@@ -103,8 +103,8 @@ public class BcftoolsTestUtil {
               "Bcftools produced stderr while processing file %s. Stderr: %s", vcfFile, error));
     }
     final String[] lines = result.split("\r\n|\r|\n");
-    if( lines.length == 1 && lines[0].isEmpty()){
-      return 0;   
+    if (lines.length == 1 && lines[0].isEmpty()) {
+      return 0;
     }
     return lines.length;
   }
