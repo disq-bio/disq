@@ -173,8 +173,11 @@ class BamRecordGuesser implements Closeable {
 
     boolean mapped = SAMFlag.READ_UNMAPPED.isUnset(flags);
     boolean secondary = SAMFlag.SECONDARY_ALIGNMENT.isSet(flags);
-    if (mapped && ((seqLength == 0 && !secondary) || numCigarOps == 0)) {
-      // Non-empty cigar/seq in mapped reads, except secondary alignments can have '*' seq
+    boolean supplementary = SAMFlag.SUPPLEMENTARY_ALIGNMENT.isSet(flags);
+    boolean primaryLine = !secondary && !supplementary;
+    if (mapped && ((seqLength == 0 && primaryLine) || numCigarOps == 0)) {
+      // Non-empty cigar/seq in mapped reads
+      //  except secondary and supplementary alignments can have '*' seq
       return NO_START;
     }
 
