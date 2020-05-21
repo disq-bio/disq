@@ -4,7 +4,7 @@
 
     <groupId>org.disq-bio</groupId>
     <artifactId>disq</artifactId>
-    <version>0.3.7-SNAPSHOT</version>
+    <version>0.3.6-SNAPSHOT</version>
     <name>Disq</name>
     <description>A library for manipulating bioinformatics sequencing formats in Apache Spark.</description>
     <url>https://github.com/disq-bio/disq</url>
