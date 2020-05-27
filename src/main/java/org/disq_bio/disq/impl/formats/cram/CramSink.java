@@ -100,7 +100,7 @@ public class CramSink extends AbstractSamSink {
 
     String terminatorFile = tempPartsDirectory + "/terminator";
     try (OutputStream out = fileSystemWrapper.create(conf, terminatorFile)) {
-      CramIO.issueEOF(CramVersions.DEFAULT_CRAM_VERSION, out);
+      CramIO.writeCramEOF(CramVersions.DEFAULT_CRAM_VERSION, out);
     }
 
     List<FileSystemWrapper.FileStatus> cramParts =
