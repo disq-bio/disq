@@ -34,7 +34,7 @@
         <java.version>1.8</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-        <htsjdk.version>2.22.0_rc1-SNAPSHOT</htsjdk.version>
+        <htsjdk.version>2.22.0_rc2-SNAPSHOT</htsjdk.version>
         <hadoop.version>2.7.5</hadoop.version>
         <mockito.version>2.22.0</mockito.version>
         <kryo-serializers.version>0.42</kryo-serializers.version>
