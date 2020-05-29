@@ -26,7 +26,11 @@
 package org.disq_bio.disq.impl.file;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -83,5 +87,15 @@ public class FileSplitInputFormat extends FileInputFormat<Void, FileSplit> {
   public RecordReader<Void, FileSplit> createRecordReader(
       InputSplit split, TaskAttemptContext context) {
     return new FileSplitRecordReader();
+  }
+
+  /**
+   * We override this method because super.listStatus returns files in an effectively random order
+   * on some filesystems. This breaks ordering assumptions and results in data corruption. We sort
+   * the results here in order to guarantee part files are returned in numeric order.
+   */
+  @Override
+  protected List<FileStatus> listStatus(final JobContext job) throws IOException {
+    return super.listStatus(job).stream().sorted().collect(Collectors.toList());
   }
 }
