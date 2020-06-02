@@ -29,6 +29,7 @@ import htsjdk.samtools.BAMSBIIndexer;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SBIIndex;
+import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.seekablestream.SeekablePathStream;
 import htsjdk.samtools.seekablestream.SeekableStream;
 import htsjdk.samtools.util.FileExtensions;
@@ -44,6 +45,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.spark.api.java.JavaRDD;
@@ -152,6 +155,11 @@ public class HtsjdkReadsRddTest extends BaseTest {
       Assert.assertEquals(expectedCount, SamtoolsTestUtil.countReads(outputPath, refPath));
     }
 
+    // check the actual reads match
+    List<SAMRecord> expectedSamRecords = AnySamTestUtil.loadEntireReadsFile(inputPath, refPath);
+    List<SAMRecord> actualSamRecords = AnySamTestUtil.loadEntireReadsFile(outputPath, refPath);
+    Assert.assertEquals(expectedSamRecords, actualSamRecords);
+
     // check we can read back what we've just written
     Assert.assertEquals(expectedCount, htsjdkReadsRddStorage.read(outputPath).getReads().count());
   }
@@ -257,7 +265,13 @@ public class HtsjdkReadsRddTest extends BaseTest {
     }
 
     // check we can read back what we've just written
-    Assert.assertEquals(expectedCount, htsjdkReadsRddStorage.read(outputPath).getReads().count());
+    final JavaRDD<SAMRecord> readsRdd = htsjdkReadsRddStorage.read(outputPath).getReads();
+    Assert.assertEquals(expectedCount, readsRdd.count());
+
+    // check the actual reads match
+    List<SAMRecord> expectedSamRecords = AnySamTestUtil.loadEntireReadsFile(inputPath, refPath);
+    final List<SAMRecord> actualSamRecords = readsRdd.collect();
+    Assert.assertEquals(expectedSamRecords, actualSamRecords);
   }
 
   protected Object[] parametersForTestReadAndWriteSubset() {
