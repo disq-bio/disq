@@ -60,10 +60,11 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
     return fileSystem.makeQualified(p).toString();
   }
 
-  private static FileSystem getFileSystem(final Configuration conf, final Path p) throws IOException {
+  private static FileSystem getFileSystem(final Configuration conf, final Path p)
+      throws IOException {
     final FileSystem fileSystem = p.getFileSystem(conf);
     if (fileSystem instanceof LocalFileSystem) {
-      return ((LocalFileSystem)fileSystem).getRawFileSystem();
+      return ((LocalFileSystem) fileSystem).getRawFileSystem();
     } else {
       return fileSystem;
     }

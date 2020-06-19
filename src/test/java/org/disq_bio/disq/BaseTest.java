@@ -53,7 +53,7 @@ public abstract class BaseTest {
   public static void setup() {
     SparkConf sparkConf = new SparkConf();
     sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-    sparkConf.set("spark.driver.bindAddress", "127.0.0.1"); 
+    sparkConf.set("spark.driver.bindAddress", "127.0.0.1");
     sparkConf.set("spark.kryo.registrator", "org.disq_bio.disq.serializer.DisqKryoRegistrator");
     sparkConf.set("spark.kryo.referenceTracking", "true");
     sparkConf.set("spark.kryo.registrationRequired", "true");
