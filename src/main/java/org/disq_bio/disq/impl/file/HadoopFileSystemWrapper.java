@@ -63,10 +63,11 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   private static FileSystem getFileSystem(final Configuration conf, final Path p)
       throws IOException {
     final FileSystem fileSystem = p.getFileSystem(conf);
-    // This replacement of the local filesystem with the raw local filesystem is necessary to avoid checksum errors
-    // from the wrapper of the raw file system which computes checksums.
-    // This is a workaround for an empirical problem and ideally could be removed if we could understand the source
-    // of the check sum errors better.
+
+    // This replacement of the local filesystem with the raw local filesystem is necessary to avoid
+    // checksum errors from the wrapper of the raw file system which computes checksums.
+    // This is a workaround for an empirical problem and ideally could be removed if we could
+    // understand the cause of the check sum errors better.
     if (fileSystem instanceof LocalFileSystem) {
       return ((LocalFileSystem) fileSystem).getRawFileSystem();
     } else {
