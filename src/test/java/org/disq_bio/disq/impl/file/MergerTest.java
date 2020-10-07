@@ -29,6 +29,7 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import org.apache.commons.codec.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -103,6 +104,7 @@ public class MergerTest {
             cluster.getConfiguration(0), hdfsDir.toUri().toString(), hdfsFile3.toUri().toString());
 
     Assert.assertEquals(
-        "contents1contents2", IOUtils.toString(cluster.getFileSystem().open(hdfsFile3)));
+        "contents1contents2",
+        IOUtils.toString(cluster.getFileSystem().open(hdfsFile3), Charsets.UTF_8));
   }
 }

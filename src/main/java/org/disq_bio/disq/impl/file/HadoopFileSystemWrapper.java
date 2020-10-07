@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.Seekable;
 import org.apache.hadoop.io.IOUtils;
@@ -55,14 +56,29 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   @Override
   public String normalize(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return fileSystem.makeQualified(p).toString();
+  }
+
+  private static FileSystem getFileSystem(final Configuration conf, final Path p)
+      throws IOException {
+    final FileSystem fileSystem = p.getFileSystem(conf);
+
+    // This replacement of the local filesystem with the raw local filesystem is necessary to avoid
+    // checksum errors from the wrapper of the raw file system which computes checksums.
+    // This is a workaround for an empirical problem and ideally could be removed if we could
+    // understand the cause of the check sum errors better.
+    if (fileSystem instanceof LocalFileSystem) {
+      return ((LocalFileSystem) fileSystem).getRawFileSystem();
+    } else {
+      return fileSystem;
+    }
   }
 
   @Override
   public SeekableStream open(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     long len = fileSystem.getFileStatus(p).getLen();
     return new SeekableBufferedStream(new SeekableHadoopStream<>(fileSystem.open(p), len, path));
   }
@@ -70,42 +86,42 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   @Override
   public OutputStream create(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return fileSystem.create(p);
   }
 
   @Override
   public boolean delete(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return fileSystem.delete(p, true);
   }
 
   @Override
   public boolean exists(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return fileSystem.exists(p);
   }
 
   @Override
   public long getFileLength(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return fileSystem.getFileStatus(p).getLen();
   }
 
   @Override
   public boolean isDirectory(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
-    return fileSystem.isDirectory(p);
+    FileSystem fileSystem = getFileSystem(conf, p);
+    return fileSystem.getFileStatus(p).isDirectory();
   }
 
   @Override
   public List<String> listDirectory(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return Arrays.stream(fileSystem.listStatus(p))
         .map(fs -> fs.getPath().toUri().toString())
         .sorted()
@@ -115,7 +131,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   @Override
   public List<FileStatus> listDirectoryStatus(Configuration conf, String path) throws IOException {
     Path p = new Path(path);
-    FileSystem fileSystem = p.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, p);
     return Arrays.stream(fileSystem.listStatus(p))
         .map(fs -> new FileStatus(fs.getPath().toUri().toString(), fs.getLen()))
         .sorted()
@@ -126,7 +142,7 @@ public class HadoopFileSystemWrapper implements FileSystemWrapper {
   public void concat(Configuration conf, List<String> parts, String path) throws IOException {
     // target must be in same directory as parts being concat'ed
     Path tmp = new Path(new Path(parts.get(0)).getParent(), "output");
-    FileSystem fileSystem = tmp.getFileSystem(conf);
+    FileSystem fileSystem = getFileSystem(conf, tmp);
     fileSystem.create(tmp).close(); // target must already exist for concat
     try {
       logger.info("Concatenating {} parts to {}", parts.size(), path);
