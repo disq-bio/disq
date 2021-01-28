@@ -34,10 +34,10 @@
         <java.version>1.8</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-        <htsjdk.version>2.22.0</htsjdk.version>
+        <htsjdk.version>2.23.0</htsjdk.version>
         <hadoop.version>3.2.1</hadoop.version>
-        <mockito.version>2.22.0</mockito.version>
-        <kryo-serializers.version>0.42</kryo-serializers.version>
+        <mockito.version>3.7.7</mockito.version>
+        <kryo-serializers.version>0.43</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
         <spark.version>3.0.1</spark.version>
@@ -171,7 +171,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>3.0.0-M3</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -196,7 +196,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M3</version>
+                <version>3.0.0-M5</version>
                 <configuration>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
@@ -224,7 +224,7 @@
                 <!-- If this fails the build, type 'mvn fmt:format' from the command line to reformat code. -->
                 <groupId>com.coveo</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
-                <version>2.9</version>
+                <version>2.10</version>
                 <executions>
                     <execution>
                         <goals>
@@ -237,7 +237,7 @@
                 <!-- Run 'mvn license:format' to add new headers. -->
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>3.0</version>
+                <version>4.0.rc2</version>
                 <configuration>
                     <header>LICENSE_header.txt</header>
                     <strictCheck>true</strictCheck>
@@ -265,7 +265,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.5</version>
+                <version>0.8.6</version>
                 <executions>
                     <execution>
                         <id>jacoco-initialize</id>
@@ -285,7 +285,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>3.1.12.2</version>
+                <version>4.2.0</version>
                 <configuration>
                     <excludeFilterFile>src/build/conf/spotbugs-exclude.xml</excludeFilterFile>
                     <onlyAnalyze>org.disq_bio.disq.-</onlyAnalyze>
@@ -302,7 +302,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M4</version>
+                <version>3.0.0-M5</version>
                 <executions>
                     <execution>
                         <goals>
@@ -383,7 +383,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
+                        <version>3.2.0</version>
                         <configuration>
                             <excludePackageNames>org.disq_bio.disq.impl.*,htsjdk.*</excludePackageNames>
                             <failOnError>true</failOnError>
@@ -415,5 +415,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>
