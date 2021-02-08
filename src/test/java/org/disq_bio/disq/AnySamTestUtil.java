@@ -50,6 +50,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.disq_bio.disq.impl.file.NioFileSystemWrapper;
 import org.disq_bio.disq.impl.formats.BoundedTraversalUtil;
 import org.disq_bio.disq.impl.formats.sam.SamFormat;
@@ -254,5 +256,20 @@ public class AnySamTestUtil {
       count++;
     }
     return count;
+  }
+
+  public static List<SAMRecord> loadEntireReadsFile(String samPath, String referencePath)
+      throws IOException {
+    ReferenceSource referenceSource =
+        referencePath == null
+            ? null
+            : new ReferenceSource(NioFileSystemWrapper.asPath(referencePath));
+    try (SamReader reader =
+        SamReaderFactory.makeDefault()
+            .validationStringency(ValidationStringency.DEFAULT_STRINGENCY)
+            .referenceSource(referenceSource)
+            .open(SamInputResource.of(NioFileSystemWrapper.asPath(samPath)))) {
+      return reader.iterator().stream().collect(Collectors.toList());
+    }
   }
 }
