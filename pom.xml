@@ -40,7 +40,7 @@
         <kryo-serializers.version>0.43</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
-        <spark.version>3.0.2</spark.version>
+        <spark.version>3.1.2</spark.version>
     </properties>
 
     <dependencies>
