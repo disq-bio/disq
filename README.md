@@ -211,8 +211,6 @@ belongs in htsjdk. This rule may be broken during a transition period while the 
 Some tests use Samtools and Bcftools to check that files created with this library are readable with them (and htsjdk).
 
 To run the tests first install [Samtools and Bcftools](http://www.htslib.org/download/).
-(Version 1.4 of samtools, and 1.3 of bcftools were used. The latter was needed to avoid
-[this bug](https://github.com/samtools/bcftools/issues/420).)
 
 Then, when running tests, specify where the binaries are on your system as follows:
 
