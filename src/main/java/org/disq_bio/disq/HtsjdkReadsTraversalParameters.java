@@ -26,6 +26,8 @@
 package org.disq_bio.disq;
 
 import htsjdk.samtools.util.Locatable;
+
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -35,7 +37,7 @@ import java.util.List;
  *
  * @param <T> the type of Locatable
  */
-public class HtsjdkReadsTraversalParameters<T extends Locatable> {
+public class HtsjdkReadsTraversalParameters<T extends Locatable> implements Serializable {
   private final List<T> intervalsForTraversal;
   private final boolean traverseUnplacedUnmapped;
 
