@@ -2,7 +2,6 @@
 
 A library for manipulating bioinformatics sequencing formats in Apache Spark.
 
-[![Build Status](https://travis-ci.org/disq-bio/disq.svg?branch=master)](https://travis-ci.org/disq-bio/disq)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.disq-bio/disq)
 [![Javadocs](https://www.javadoc.io/badge/org.disq-bio/disq.svg)](https://www.javadoc.io/doc/org.disq-bio/disq)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
