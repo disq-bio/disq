@@ -429,7 +429,7 @@ public class HtsjdkReadsRddTest extends BaseTest {
 
     HtsjdkReadsRddStorage htsjdkReadsRddStorage =
         HtsjdkReadsRddStorage.makeDefault(jsc)
-            .splitSize(40000)
+            .splitSize(4000)
             .useNio(false)
             .referenceSourcePath(refPath);
 
