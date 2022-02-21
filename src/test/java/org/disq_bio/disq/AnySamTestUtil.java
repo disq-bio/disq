@@ -56,8 +56,10 @@ import org.disq_bio.disq.impl.formats.sam.SamFormat;
 import org.junit.Assert;
 
 public class AnySamTestUtil {
-  // use a target contig size that corresponds to the size of the contig in the test.fa reference file used by the tests
+  // use a target contig size that corresponds to the size of the contig in the test.fa reference
+  // file used by the tests
   private static final int TARGET_CONTIG_SIZE = 47600;
+
   public static String writeAnySamFile(
       int numPairs,
       SAMFileHeader.SortOrder sortOrder,
@@ -66,14 +68,17 @@ public class AnySamTestUtil {
       throws IOException {
     SamFormat samFormat = SamFormat.fromFormatWriteOption(formatWriteOption);
     // file will be both queryname and coordinate sorted, so use one or the other
-    SAMRecordSetBuilder samRecordSetBuilder = new SAMRecordSetBuilder(true, sortOrder, true, TARGET_CONTIG_SIZE);
+    SAMRecordSetBuilder samRecordSetBuilder =
+        new SAMRecordSetBuilder(true, sortOrder, true, TARGET_CONTIG_SIZE);
     for (int i = 0; i < numPairs; i++) {
       int chr = 20;
       int start1 = (i + 1) * 40;
       int start2 = start1 + 100;
       if (start1 > TARGET_CONTIG_SIZE || start2 > TARGET_CONTIG_SIZE) {
-        // reads that are mapped outside of the target reference contig span can cause problems for CRAM files
-        throw new IllegalStateException(String.format("Read is mapped outside of the target span: %d", TARGET_CONTIG_SIZE));
+        // reads that are mapped outside of the target reference contig span can cause problems for
+        // CRAM files
+        throw new IllegalStateException(
+            String.format("Read is mapped outside of the target span: %d", TARGET_CONTIG_SIZE));
       }
       if (i == 5) { // add two unmapped fragments instead of a mapped pair
         samRecordSetBuilder.addFrag(
