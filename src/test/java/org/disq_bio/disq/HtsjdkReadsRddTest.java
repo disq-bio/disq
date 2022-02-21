@@ -444,12 +444,14 @@ public class HtsjdkReadsRddTest extends BaseTest {
         && SamtoolsTestUtil.isSamtoolsAvailable()
         && !formatWriteOption.equals(ReadsFormatWriteOption.SAM)) {
       if (ReadsFormatWriteOption.CRAM != formatWriteOption) {
-        // in some cases, samtools doesn't return correct counts for unmapped reads in a CRAM, so disable
-        // samtools cross-checking until we get a samtools fix. see https://github.com/disq-bio/disq/issues/163
+        // in some cases, samtools doesn't return correct counts for unmapped reads in a CRAM, so
+        // disable
+        // samtools cross-checking until we get a samtools fix. see
+        // https://github.com/disq-bio/disq/issues/163
         // and https://github.com/samtools/htslib/issues/1387
         if (ReadsFormatWriteOption.CRAM != formatWriteOption) {
           int expectedCountSamtools =
-                  SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);
+              SamtoolsTestUtil.countReads(inputPath, refPath, traversalParameters);
           Assert.assertEquals(expectedCountSamtools, htsjdkReadsRdd.getReads().count());
         }
       }
