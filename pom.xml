@@ -41,7 +41,7 @@
         <htsjdk.version>2.24.1</htsjdk.version>
         <hadoop.version>3.2.1</hadoop.version>
         <mockito.version>3.7.7</mockito.version>
-        <kryo-serializers.version>0.43</kryo-serializers.version>
+        <kryo-serializers.version>0.45</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
         <spark.version>3.1.2</spark.version>
@@ -57,6 +57,12 @@
             <groupId>de.javakaffee</groupId>
             <artifactId>kryo-serializers</artifactId>
             <version>${kryo-serializers.version}</version>
+            <exclusions>
+              <exclusion>
+                <groupId> com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
