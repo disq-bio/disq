@@ -1,0 +1,26 @@
+name: IT
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+        NO_GCE_CHECK: true
+        SPARK_LOCAL_IP: localhost
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+      - uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - run: src/build/bin/install-samtools.sh
+      - run: src/build/bin/install-bcftools.sh
+      - run: src/build/bin/checkout-gatk-large-files.sh
+      - run: mvn --batch-mode verify -Ddisq.test.real.world.files.dir=gatk/src/test/resources/large -Ddisq.test.real.world.files.ref=gatk/src/test/resources/large/human_g1k_v37.20.21.fasta -Ddisq.samtools.bin=/usr/bin/samtools -Ddisq.bcftools.bin=/usr/bin/bcftools
