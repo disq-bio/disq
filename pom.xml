@@ -312,7 +312,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>3.0.0-M4</version><!-- 3.0.0-M5 fails integration tests, see https://github.com/disq-bio/disq/issues/150 -->
                 <executions>
                     <execution>
                         <goals>
