@@ -115,7 +115,7 @@ public class DisqKryoRegistrator implements KryoRegistrator {
     kryo.register(htsjdk.samtools.util.Interval.class);
 
     // htsjdk.variant.variantcontext
-    kryo.register(htsjdk.variant.variantcontext.Allele.class);
+    kryo.register(htsjdk.variant.variantcontext.SimpleAllele.class);
     kryo.register(htsjdk.variant.variantcontext.CommonInfo.class);
     kryo.register(htsjdk.variant.variantcontext.FastGenotype.class);
     kryo.register(htsjdk.variant.variantcontext.GenotypeType.class);
