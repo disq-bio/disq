@@ -44,7 +44,8 @@
         <kryo-serializers.version>0.45</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
-        <spark.version>3.1.2</spark.version>
+        <spark.version>3.3.0</spark.version>
+        <jackson.core.version>2.13.3</jackson.core.version>
     </properties>
 
     <dependencies>
@@ -168,6 +169,18 @@
             <artifactId>jsr203hadoop</artifactId>
             <version>1.0.3</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.core.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>    
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.core.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
