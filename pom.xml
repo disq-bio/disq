@@ -38,14 +38,14 @@
         <java.version>1.8</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-        <htsjdk.version>3.0.1</htsjdk.version>
-        <hadoop.version>3.2.1</hadoop.version>
-        <mockito.version>3.7.7</mockito.version>
+        <htsjdk.version>3.0.5</htsjdk.version>
+        <hadoop.version>3.3.6</hadoop.version>
+        <mockito.version>5.5.0</mockito.version>
         <kryo-serializers.version>0.45</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
         <spark.version>3.3.3</spark.version>
-        <jackson.core.version>2.13.3</jackson.core.version>
+        <jackson.core.version>2.15.2</jackson.core.version>
         <argLine>
             --add-exports java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
@@ -133,7 +133,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -157,6 +157,12 @@
                 <artifactId>*</artifactId>
               </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+            <version>4.0.56.Final</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -234,7 +240,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
@@ -315,9 +321,10 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.2.0</version>
+                <version>4.7.3.0</version>
                 <configuration>
                     <excludeFilterFile>src/build/conf/spotbugs-exclude.xml</excludeFilterFile>
+                    <failOnError>false</failOnError>
                     <onlyAnalyze>org.disq_bio.disq.-</onlyAnalyze>
                     <xmlOutput>true</xmlOutput>
                 </configuration>
@@ -332,7 +339,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M4</version><!-- 3.0.0-M5 fails integration tests, see https://github.com/disq-bio/disq/issues/150 -->
+                <version>3.0.0-M7</version>
                 <executions>
                     <execution>
                         <goals>
