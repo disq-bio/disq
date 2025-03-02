@@ -44,7 +44,7 @@
         <kryo-serializers.version>0.45</kryo-serializers.version>
         <slf4j.version>1.7.30</slf4j.version>
         <scala.version>2.12</scala.version>
-        <spark.version>3.3.3</spark.version>
+        <spark.version>3.5.5</spark.version>
         <jackson.core.version>2.15.2</jackson.core.version>
         <argLine>
             --add-exports java.base/sun.nio.ch=ALL-UNNAMED
