@@ -53,7 +53,7 @@ public class VcfTestUtil {
     } else {
       actualVcf = vcf;
     }
-    return new VCFFileReader(actualVcf, false);
+    return new VCFFileReader(actualVcf.toPath(), false);
   }
 
   public static int countVariants(final String vcfPath) throws IOException {

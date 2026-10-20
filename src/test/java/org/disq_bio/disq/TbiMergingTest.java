@@ -97,8 +97,8 @@ public class TbiMergingTest extends BaseTest {
   }
 
   private static File indexVcf(File vcf, File tbi) throws IOException {
-    TabixIndex tabixIndex = IndexFactory.createTabixIndex(vcf, new VCFCodec(), null);
-    tabixIndex.write(tbi);
+    TabixIndex tabixIndex = IndexFactory.createTabixIndex(vcf.toPath(), new VCFCodec(), null);
+    tabixIndex.write(tbi.toPath());
     return tbi;
   }
 }

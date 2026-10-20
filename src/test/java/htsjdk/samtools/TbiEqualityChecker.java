@@ -28,12 +28,15 @@ package htsjdk.samtools;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
 
+import htsjdk.index.BinningIndex;
+import htsjdk.index.ReferenceBins;
 import htsjdk.samtools.util.BlockCompressedFilePointerUtil;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.tribble.index.IndexFactory;
 import htsjdk.tribble.index.tabix.TabixIndex;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import org.junit.Assert;
 
 public class TbiEqualityChecker {
@@ -63,57 +66,27 @@ public class TbiEqualityChecker {
 
     Assert.assertEquals("Sequences", tbi1.getSequenceNames(), tbi2.getSequenceNames());
 
-    int numReferences = tbi1.getSequenceNames().size();
-    for (int i = 0; i < numReferences; i++) {
-      BinningIndexContent binningIndexContent1 = tbi1.getIndices()[i];
-      BinningIndexContent binningIndexContent2 = tbi2.getIndices()[i];
-      assertEquals(binningIndexContent1, binningIndexContent2, identical);
+    BinningIndex index1 = tbi1.getBinningIndex();
+    BinningIndex index2 = tbi2.getBinningIndex();
+    for (int i = 0; i < index1.getReferenceCount(); i++) {
+      assertEquals(index1.getReference(i), index2.getReference(i), identical);
     }
   }
 
-  private void assertEquals(
-      BinningIndexContent binningIndexContent1,
-      BinningIndexContent binningIndexContent2,
-      boolean identical)
+  private void assertEquals(ReferenceBins reference1, ReferenceBins reference2, boolean identical)
       throws IOException {
-
-    assertEquals(binningIndexContent1.getBins(), binningIndexContent2.getBins(), identical);
-    assertEquals(binningIndexContent1.getLinearIndex(), binningIndexContent2.getLinearIndex());
-  }
-
-  private void assertEquals(
-      BinningIndexContent.BinList bins1, BinningIndexContent.BinList bins2, boolean identical)
-      throws IOException {
-    Assert.assertEquals("Max bin number", bins1.maxBinNumber, bins2.maxBinNumber);
-    Assert.assertEquals(
-        "Number of non-null bins", bins1.getNumberOfNonNullBins(), bins2.getNumberOfNonNullBins());
-    for (int i = 0; i <= bins1.maxBinNumber; i++) {
-      assertEquals(bins1.getBin(i), bins2.getBin(i), identical);
+    Assert.assertEquals("Number of bins", reference1.getBinCount(), reference2.getBinCount());
+    for (int b = 0; b < reference1.getBinCount(); b++) {
+      Assert.assertEquals("Bin number", reference1.getBinNumber(b), reference2.getBinNumber(b));
+      List<Chunk> chunks1 = reference1.getChunks(b);
+      List<Chunk> chunks2 = reference2.getChunks(b);
+      Assert.assertEquals("Chunk list size", chunks1.size(), chunks2.size());
+      for (int i = 0; i < chunks1.size(); i++) {
+        assertEquals(chunks1.get(i), chunks2.get(i), identical);
+      }
     }
-  }
-
-  private void assertEquals(Bin bin1, Bin bin2, boolean identical) throws IOException {
-    if (bin1 == null || bin2 == null) {
-      Assert.assertEquals(bin1, bin2);
-      return;
-    }
-    Assert.assertEquals("Bin number", bin1.getBinNumber(), bin2.getBinNumber());
-    Assert.assertEquals("Chunk list size", bin1.getChunkList().size(), bin2.getChunkList().size());
-    for (int i = 0; i < bin1.getChunkList().size(); i++) {
-      assertEquals(bin1.getChunkList().get(i), bin2.getChunkList().get(i), identical);
-    }
-  }
-
-  private void assertEquals(LinearIndex linearIndex1, LinearIndex linearIndex2) {
-    Assert.assertEquals(
-        "Linear index ref",
-        linearIndex1.getReferenceSequence(),
-        linearIndex2.getReferenceSequence());
-    Assert.assertEquals("Linear index size", linearIndex1.size(), linearIndex2.size());
-    Assert.assertEquals(
-        "Linear index start", linearIndex1.getIndexStart(), linearIndex2.getIndexStart());
     assertArrayEquals(
-        "Linear index entries", linearIndex1.getIndexEntries(), linearIndex2.getIndexEntries());
+        "Linear index entries", reference1.getLinearIndex(), reference2.getLinearIndex());
   }
 
   private void assertEquals(Chunk chunk1, Chunk chunk2, boolean identical) {

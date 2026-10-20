@@ -26,7 +26,7 @@
 package org.disq_bio.disq.impl.formats.sam;
 
 import com.google.common.collect.Iterators;
-import htsjdk.samtools.AbstractBAMFileIndex;
+import htsjdk.index.HtsFileSpan;
 import htsjdk.samtools.BAMFileReader;
 import htsjdk.samtools.BAMFileSpan;
 import htsjdk.samtools.BAMIndex;
@@ -41,6 +41,7 @@ import htsjdk.samtools.util.Locatable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -115,8 +116,8 @@ public abstract class AbstractBinarySamSource extends AbstractSamSource {
                           "Intervals set but no index file found for " + p);
                     }
                     BAMIndex idx = samReader.indexing().getIndex();
-                    long startOfLastLinearBin = idx.getStartOfLastLinearBin();
-                    long noCoordinateCount = ((AbstractBAMFileIndex) idx).getNoCoordinateCount();
+                    Optional<HtsFileSpan> unplacedUnmappedSpan =
+                        samReader.indexing().getHtsIndex().getSpanOfUnplaced();
                     Iterator<SAMRecord> intervalReadsIterator;
                     if (traversal.getIntervalsForTraversal() == null
                         || traversal.getIntervalsForTraversal().isEmpty()) {
@@ -139,9 +140,9 @@ public abstract class AbstractBinarySamSource extends AbstractSamSource {
 
                     // add on unplaced unmapped reads if there are any in this range
                     if (traversal.getTraverseUnplacedUnmapped()) {
-                      if (startOfLastLinearBin != -1
-                          && noCoordinateCount >= getMinUnplacedUnmappedReadsCoordinateCount()) {
-                        long unplacedUnmappedStart = startOfLastLinearBin;
+                      if (unplacedUnmappedSpan.isPresent()) {
+                        long unplacedUnmappedStart =
+                            ((BAMFileSpan) unplacedUnmappedSpan.get()).getFirstOffset();
                         if (pathChunk.getSpan().getChunkStart() <= unplacedUnmappedStart
                             && unplacedUnmappedStart < pathChunk.getSpan().getChunkEnd()) {
                           SamReader unplacedUnmappedReadsSamReader =
@@ -173,8 +174,4 @@ public abstract class AbstractBinarySamSource extends AbstractSamSource {
 
   protected abstract CloseableIterator<SAMRecord> createIndexIterator(
       SamReader samReader, QueryInterval[] intervals, boolean contained, long[] filePointers);
-
-  protected int getMinUnplacedUnmappedReadsCoordinateCount() {
-    return 1;
-  }
 }

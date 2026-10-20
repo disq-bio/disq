@@ -33,8 +33,8 @@ import htsjdk.samtools.util.OverlapDetector;
 import htsjdk.tribble.FeatureCodecHeader;
 import htsjdk.tribble.index.Index;
 import htsjdk.tribble.index.IndexFactory;
-import htsjdk.tribble.readers.AsciiLineReader;
-import htsjdk.tribble.readers.AsciiLineReaderIterator;
+import htsjdk.tribble.readers.Utf8LineReader;
+import htsjdk.tribble.readers.Utf8LineReaderIterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFHeader;
@@ -77,7 +77,7 @@ public class VcfSource implements Serializable {
         fileSystemWrapper.open(jsc.hadoopConfiguration(), getFirstPath(jsc, path))) {
       InputStream is = bufferAndDecompressIfNecessary(headerIn);
       FeatureCodecHeader featureCodecHeader =
-          new VCFCodec().readHeader(new AsciiLineReaderIterator(AsciiLineReader.from(is)));
+          new VCFCodec().readHeader(new Utf8LineReaderIterator(Utf8LineReader.from(is)));
       return (VCFHeader) featureCodecHeader.getHeaderValue();
     }
   }
@@ -87,7 +87,7 @@ public class VcfSource implements Serializable {
         fileSystemWrapper.open(jsc.hadoopConfiguration(), getFirstPath(jsc, path))) {
       InputStream is = bufferAndDecompressIfNecessary(headerIn);
       VCFCodec vcfCodec = new VCFCodec();
-      vcfCodec.readHeader(new AsciiLineReaderIterator(AsciiLineReader.from(is)));
+      vcfCodec.readHeader(new Utf8LineReaderIterator(Utf8LineReader.from(is)));
       return vcfCodec;
     }
   }

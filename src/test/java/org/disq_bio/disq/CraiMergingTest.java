@@ -122,7 +122,7 @@ public class CraiMergingTest extends BaseTest {
   }
 
   private static File indexCram(File cram, File crai) throws IOException {
-    try (SeekableStream in = new SeekableFileStream(cram);
+    try (SeekableStream in = new SeekableFileStream(cram.toPath());
         OutputStream out = new FileOutputStream(crai)) {
       CRAMCRAIIndexer.writeIndex(in, out);
     }

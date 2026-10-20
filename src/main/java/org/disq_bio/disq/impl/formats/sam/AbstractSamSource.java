@@ -86,7 +86,6 @@ public abstract class AbstractSamSource implements Serializable {
     SeekableStream indexStream = findIndex(conf, path);
     SamReaderFactory readerFactory =
         SamReaderFactory.makeDefault()
-            .setOption(SamReaderFactory.Option.CACHE_FILE_BASED_INDEXES, true)
             .setOption(SamReaderFactory.Option.EAGERLY_DECODE, false)
             .setUseAsyncIo(false);
     if (stringency != null) {
@@ -129,7 +128,7 @@ public abstract class AbstractSamSource implements Serializable {
     if (underlyingReader.hasIndex()) {
       // force BAMFileReader#mIndex to be populated so the index stream is properly
       // closed by the close() method
-      underlyingReader.getIndex();
+      underlyingReader.getHtsIndex();
     }
     return samReader;
   }
