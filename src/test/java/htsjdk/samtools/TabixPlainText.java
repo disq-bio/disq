@@ -25,6 +25,8 @@
  */
 package htsjdk.samtools;
 
+import htsjdk.index.BinningIndex;
+import htsjdk.index.ReferenceBins;
 import htsjdk.samtools.util.BlockCompressedInputStream;
 import htsjdk.tribble.index.tabix.TabixIndex;
 import java.io.File;
@@ -50,51 +52,23 @@ public class TabixPlainText {
   }
 
   public static void dump(PrintWriter pw, TabixIndex tbi) {
-    BinningIndexContent[] binningIndexContents = tbi.getIndices();
-    for (BinningIndexContent content : binningIndexContents) {
-      if (content == null) {
-        continue;
-      }
-      writeReference(pw, content);
+    BinningIndex index = tbi.getBinningIndex();
+    for (int reference = 0; reference < index.getReferenceCount(); reference++) {
+      writeReference(pw, reference, index.getReference(reference));
     }
   }
 
-  private static void writeReference(PrintWriter pw, final BinningIndexContent content) {
-
-    final int reference = content.getReferenceSequence();
-
-    final BAMIndexContent.BinList bins = content.getBins();
-    final int size = bins == null ? 0 : content.getNumberOfNonNullBins();
-
-    if (size == 0) {
-      pw.println("Reference " + reference + " has n_bin=0");
-      pw.println("Reference " + reference + " has n_intv=0");
-      return;
-    }
-
-    // chunks
-    for (final Bin bin : bins) { // note, bins will always be sorted
-      if (bin.getBinNumber() == GenomicIndexUtil.MAX_BINS) break;
-      if (bin.getChunkList() == null) {
-        pw.println(
-            "  Ref " + reference + " bin " + bin.getBinNumber() + " has no binArray"); // remove?
-        continue;
-      }
-      final List<Chunk> chunkList = bin.getChunkList();
-      if (chunkList == null) {
-        pw.println("  Ref " + reference + " bin " + bin.getBinNumber() + " has no chunkList");
-        continue;
-      }
-      pw.print(
+  private static void writeReference(PrintWriter pw, int reference, ReferenceBins bins) {
+    pw.println("Reference " + reference + " has n_bin=" + bins.getBinCount());
+    for (int b = 0; b < bins.getBinCount(); b++) {
+      final List<Chunk> chunkList = bins.getChunks(b);
+      pw.println(
           "  Ref "
               + reference
               + " bin "
-              + bin.getBinNumber()
+              + bins.getBinNumber(b)
               + " has n_chunk= "
               + chunkList.size());
-      if (chunkList.isEmpty()) {
-        pw.println();
-      }
       for (final Chunk c : chunkList) {
         pw.println(
             "     Chunk: "
@@ -106,26 +80,11 @@ public class TabixPlainText {
       }
     }
 
-    // linear index
-    final LinearIndex linearIndex = content.getLinearIndex();
-    if (linearIndex == null || linearIndex.getIndexEntries() == null) {
-      pw.println("Reference " + reference + " has n_intv= 0");
-      return;
-    }
-    final long[] entries = linearIndex.getIndexEntries();
-    final int indexStart = linearIndex.getIndexStart();
-    // System.out.println("index start is " + indexStart);
-    final int n_intv = entries.length + indexStart;
-    pw.println("Reference " + reference + " has n_intv= " + n_intv);
+    final long[] entries = bins.getLinearIndex();
+    pw.println("Reference " + reference + " has n_intv= " + entries.length);
     for (int k = 0; k < entries.length; k++) {
       if (entries[k] != 0) {
-        pw.println(
-            "  Ref "
-                + reference
-                + " ioffset for "
-                + (k + indexStart)
-                + " is "
-                + Long.toString(entries[k]));
+        pw.println("  Ref " + reference + " ioffset for " + k + " is " + Long.toString(entries[k]));
       }
     }
     pw.flush(); // write each reference to disk as it's being created

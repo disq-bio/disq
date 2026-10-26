@@ -188,9 +188,4 @@ public class CramSource extends AbstractBinarySamSource implements Serializable 
     return getUnderlyingCramFileReader(samReader)
         .createIndexIterator(intervals, contained, filePointers);
   }
-
-  @Override
-  protected int getMinUnplacedUnmappedReadsCoordinateCount() {
-    return 0; // noCoordinateCount always seems to be 0 for CRAM files
-  }
 }

@@ -122,9 +122,9 @@ public class BaiMergingTest extends BaseTest {
             .validationStringency(ValidationStringency.SILENT)
             .enable(SamReaderFactory.Option.INCLUDE_SOURCE_IN_RECORDS)
             .disable(SamReaderFactory.Option.VALIDATE_CRC_CHECKSUMS)
-            .open(SamInputResource.of(bam))) {
+            .open(SamInputResource.of(bam.toPath()))) {
 
-      final BAMIndexer indexer = new BAMIndexer(bai, in.getFileHeader());
+      final BAMIndexer indexer = new BAMIndexer(bai.toPath(), in.getFileHeader());
       for (final SAMRecord rec : in) {
         indexer.processAlignment(rec);
       }
@@ -138,7 +138,7 @@ public class BaiMergingTest extends BaseTest {
   // create a human-readable BAI
   private static File textIndexBai(File bai) {
     File textBai = new File(bai.toString() + ".txt");
-    BAMIndexer.createAndWriteIndex(bai, textBai, true);
+    BAMIndexer.createAndWriteIndex(bai.toPath(), textBai.toPath(), true);
     return textBai;
   }
 }
