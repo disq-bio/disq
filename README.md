@@ -194,7 +194,7 @@ JavaRDD<SAMRecord> reads = HtsjdkReadsRddStorage.makeDefault(jsc)
 
 ## Implementation notes for developers
 
-The library requires Java 8 or later. The surface area of the API has deliberately been kept small by exposing only a
+The library requires Java 17 or later. The surface area of the API has deliberately been kept small by exposing only a
 few public classes in the top-level `disq` package, and putting all the private implementation classes in `impl`
 packages. Users should not access anything in `impl`. While it is not possible to enforce this, anything in `impl`
 is not subject to release versioning rules (i.e. it could be removed in any release).

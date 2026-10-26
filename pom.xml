@@ -38,7 +38,7 @@
         <java.version>17</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-        <htsjdk.version>6.0.0-a872a49-SNAPSHOT</htsjdk.version>
+        <htsjdk.version>6.0.0</htsjdk.version>
         <hadoop.version>3.3.6</hadoop.version>
         <mockito.version>5.5.0</mockito.version>
         <kryo-serializers.version>0.45</kryo-serializers.version>

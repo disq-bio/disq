@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         distribution: [ 'zulu' ]
-        java: [ '11', '17' ]
+        java: [ '17', '21' ]
     env:
         NO_GCE_CHECK: true
         SPARK_LOCAL_IP: localhost
